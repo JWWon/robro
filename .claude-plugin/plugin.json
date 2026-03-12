@@ -5,6 +5,9 @@
   "author": {
     "name": "JWWon"
   },
+  "license": "MIT",
+  "repository": "https://github.com/JWWon/robro",
+  "homepage": "https://github.com/JWWon/robro",
   "keywords": ["planning", "spec", "requirements", "idea", "build", "implementation"],
   "hooks": "./hooks/hooks.json"
 }
