@@ -43,7 +43,7 @@ At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/Y
 ```yaml
 skill: idea
 step: "3"
-detail: "Round 7, targeting constraints (ambiguity: 0.35)"
+detail: "Round 7, targeting constraints (ambiguity: 0.25)"
 next: "Ask about scalability limits — user mentioned this but hasn't defined bounds"
 gate: "ambiguity ≤ 0.2 AND user confirms requirements, criteria, approach"
 ```
@@ -257,7 +257,7 @@ Challenge modes are **inline perspective shifts**, not subagent dispatches. Read
   - Propose the 80/20 version to the user in your next question
   - Log simplification analysis to `discussion/simplifier-review.md`
 
-- **Round 8+**: If ambiguity > 0.3, activate **Ontologist** mode (read `agents/ontologist.md`)
+- **Round 8+**: If ambiguity > 0.2, activate **Ontologist** mode (read `agents/ontologist.md`)
   - Step back from details — ask "what IS this, really?"
   - Challenge whether the current problem framing is correct
   - Propose reframing via analogy, inversion, or problem redefinition
