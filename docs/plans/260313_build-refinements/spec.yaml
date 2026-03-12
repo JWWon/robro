@@ -118,7 +118,7 @@ checklist:
       2. Check YAML frontmatter — no 'isolation:' field present
       3. Check description field — does not contain 'worktree isolation'
       4. Check system prompt line — references 'inline' and 'worktree-isolated'
-    passes: false
+    passes: true
 
   - id: C2
     section: S1
@@ -132,7 +132,7 @@ checklist:
       2. Find 'Path A: Inline' section
       3. Verify Agent dispatch does NOT include isolation parameter
       4. Verify no mention of agent count cap for inline path
-    passes: false
+    passes: true
 
   - id: C3
     section: S1
@@ -147,7 +147,7 @@ checklist:
       3. Verify TeamCreate, TaskCreate, SendMessage tool usage
       4. Verify max 5 teammates cap
       5. Verify non-overlapping file assignment instruction
-    passes: false
+    passes: true
 
   - id: C4
     section: S1
@@ -160,7 +160,7 @@ checklist:
       1. Read skills/build/heads-down-phase.md
       2. Find 'Path B: Isolated Parallel' section
       3. Verify Agent dispatch includes isolation: "worktree" parameter
-    passes: false
+    passes: true
 
   - id: C5
     section: S2
@@ -173,7 +173,7 @@ checklist:
       1. Read skills/build/heads-down-phase.md
       2. Search for 'git merge --squash' — must exist
       3. Search for '--no-ff' — must not exist
-    passes: false
+    passes: true
 
   - id: C6
     section: S2
@@ -187,7 +187,7 @@ checklist:
       2. Find squash merge section in Path B
       3. Verify 'git worktree remove' command follows merge
       4. Verify 'git branch -D' command follows worktree removal
-    passes: false
+    passes: true
 
   - id: C7
     section: S3
@@ -200,7 +200,7 @@ checklist:
       1. Read agents/conflict-resolver.md
       2. Check frontmatter description — contains 'squash merges'
       3. Check system prompt — contains 'squash-merging'
-    passes: false
+    passes: true
 
   - id: C8
     section: S1
@@ -214,7 +214,7 @@ checklist:
       2. Find 'Classify execution path' section with inline/isolated/Teams criteria
       3. Find stale worktree cleanup step with git worktree commands
       4. Search for 'max worktrees' — must not exist
-    passes: false
+    passes: true
 
   - id: C9
     section: S4
@@ -230,7 +230,7 @@ checklist:
       4. Verify create case (file doesn't exist) is handled
       5. Verify update case (file exists, merge env vars) is handled
       6. Verify idempotency section exists
-    passes: false
+    passes: true
 
   - id: C10
     section: S5
@@ -245,7 +245,7 @@ checklist:
       3. Verify text mentions 'inline, isolated, or Teams'
       4. Verify 'Squash merge' is mentioned
       5. Verify old text 'Merge worktrees after each level' is gone
-    passes: false
+    passes: true
 
   - id: C11
     section: S5
@@ -258,7 +258,7 @@ checklist:
       1. Read CLAUDE.md
       2. Find builder.md entry in directory structure
       3. Verify it says 'inline or worktree-isolated'
-    passes: false
+    passes: true
 
   - id: C12
     section: S5
@@ -271,4 +271,4 @@ checklist:
       1. Read .claude/CLAUDE.md
       2. Find Builder description — mentions 'dispatch time' and both modes
       3. Find Conflict Resolver description — mentions 'squash merges'
-    passes: false
+    passes: true
