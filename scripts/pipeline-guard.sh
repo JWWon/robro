@@ -99,7 +99,7 @@ case "$skill" in
         echo "Action: Complete Brief phase — gather context, scan project rules/agents, plan parallel levels, fetch JIT knowledge."
         ;;
       heads-down)
-        echo "Action: Execute tasks via builder agents. TDD flow: failing test, implement, verify, commit. Merge worktrees after each level."
+        echo "Action: Execute tasks via builder agents (inline, isolated, or Teams per Brief classification). TDD flow: failing test, implement, verify, commit. Squash merge + cleanup for isolated path."
         ;;
       review)
         echo "Action: Run 3-stage review — mechanical first (build/lint/test), then semantic, then consensus if needed."
