@@ -132,7 +132,137 @@ The updated block should be:
 Report: **"Updated existing robro section in .claude/CLAUDE.md"**
 
 ### Step 2: MCP/Skill Detection & Checklist
-{To be implemented in Task 3.4}
+
+Detect which recommended MCP servers, rules, and skills are already configured, then present a checklist for the user to select what to install. Never re-install items that are already configured.
+
+#### 2a. Define Recommended Items
+
+The setup skill recommends these 4 items:
+
+| Name | Type | Purpose |
+|------|------|---------|
+| context7 | MCP | Up-to-date library documentation lookup |
+| grep | MCP | Search code on GitHub repositories |
+| github | Rule | Guide for using git and gh CLI effectively |
+| agent-browser | Skill | Browser automation for testing and scraping |
+
+#### 2b. Detection Logic
+
+For each item, determine whether it is already configured. An item is "configured" if it is detected by ANY of its detection paths — never re-install something that already exists.
+
+**MCP detection (context7, grep)**:
+
+1. Read `~/.claude.json` using the Read tool. Parse the JSON content and check if the `mcpServers` object contains a key matching the MCP name (e.g., `"context7"` or `"grep"`).
+2. Read `.mcp.json` at the project root (use the `PROJECT_ROOT` from Step 1b). Parse the JSON content and check if the `mcpServers` object contains a key matching the MCP name.
+3. If the key exists in EITHER file, the MCP is **already configured** — skip it.
+4. If the Read tool returns a "file does not exist" error for either file, treat that file as having no MCPs configured (do not error out — just continue to the next file).
+
+**Rule detection (github)**:
+
+1. Use the Glob tool to find all files matching `.claude/rules/*.md` in the project root.
+2. For each found file, use the Grep tool to search its content for `git` or `github` (case-insensitive).
+3. If ANY rule file contains git-related content (matches "git" or "github"), the github rule is **already configured** — skip it. This avoids creating duplicates when the user already has git conventions in a differently-named file (e.g., `.claude/rules/workflow.md` that mentions git).
+4. If no `.claude/rules/` directory exists or no files match, or no files contain git-related content, the github rule is **not configured**.
+
+**Skill detection (agent-browser)**:
+
+1. Use the Glob tool to check if `.claude/skills/agent-browser/` directory exists (look for `.claude/skills/agent-browser/SKILL.md` or any file in that directory).
+2. If not found, read `~/.claude/plugins/installed_plugins.json` and check if it contains an entry with `"agent-browser"` in it.
+3. If EITHER check finds a match, agent-browser is **already configured** — skip it.
+4. If the installed_plugins.json file does not exist, treat it as no plugins installed.
+
+#### 2c. Present Checklist
+
+Build a status summary of all 4 items and present it to the user. Use AskUserQuestion with multiSelect to let the user choose which unconfigured items to install.
+
+Format the checklist like this:
+
+```
+Recommended MCP servers, rules, and skills for this project:
+
+[already configured] context7 (MCP) — Up-to-date library docs
+[not configured]     grep (MCP) — Search GitHub code
+[not configured]     github (Rule) — Git/gh CLI guide
+[already configured] agent-browser (Skill) — Browser automation
+
+Select items to install (already-configured items are skipped automatically):
+```
+
+The AskUserQuestion options should include:
+- Each **unconfigured** item as a selectable option (e.g., "grep (MCP)", "github (Rule)")
+- A "Skip all" option to skip the entire step
+
+If ALL items are already configured, skip AskUserQuestion entirely and report: **"All recommended items already configured — nothing to install"**. Proceed to Step 3.
+
+#### 2d. Install Confirmed Items
+
+For each item the user selected, execute the appropriate install action:
+
+**MCP: context7**
+```bash
+claude mcp add --scope project context7 -- npx -y @upstash/context7-mcp@latest
+```
+
+**MCP: grep**
+```bash
+claude mcp add --scope project grep -- npx -y @anthropic-ai/grep-mcp
+```
+
+**Rule: github**
+
+Create the file `.claude/rules/github.md` in the project root using the Write tool with the following content:
+
+```markdown
+# Git & GitHub CLI Guide
+
+## Commit Conventions
+- Write clear, descriptive commit messages
+- Use conventional commits format: `type(scope): description`
+- Common types: feat, fix, docs, chore, refactor, test
+- Keep the first line under 72 characters
+
+## Branch Workflow
+- Create feature branches from main: `git checkout -b feat/description`
+- Keep branches focused on a single change
+- Rebase on main before merging to keep history clean
+
+## GitHub CLI (gh)
+- Create PRs: `gh pr create --title "..." --body "..."`
+- Check PR status: `gh pr status`
+- View PR checks: `gh pr checks`
+- Merge PRs: `gh pr merge --squash`
+- Create issues: `gh issue create --title "..." --body "..."`
+- List issues: `gh issue list`
+
+## Best Practices
+- Pull before pushing: `git pull --rebase origin main`
+- Review diffs before committing: `git diff --staged`
+- Use `.gitignore` to exclude build artifacts, secrets, and IDE files
+- Never commit secrets, API keys, or credentials
+```
+
+**Skill: agent-browser**
+```bash
+npx skills add vercel-labs/agent-browser --skill agent-browser
+```
+
+If the `npx skills add` command fails (non-zero exit code), report the error and provide manual install instructions as fallback:
+
+> **agent-browser install failed.** You can install it manually:
+> 1. Visit https://github.com/vercel-labs/agent-browser
+> 2. Follow the installation instructions in the README
+> 3. Or run: `claude plugin install agent-browser`
+
+#### 2e. Report Results
+
+After processing all items, report the summary:
+
+**"{N} items installed, {M} already configured, {K} skipped by user"**
+
+Where:
+- N = number of items successfully installed in this step
+- M = number of items that were already configured (detected in 2b)
+- K = number of unconfigured items the user chose not to install (including "Skip all")
 
 ### Step 3: .gitignore Configuration
 {To be implemented in Task 3.5}
