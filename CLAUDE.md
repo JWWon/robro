@@ -86,7 +86,7 @@ robro/
 │   ├── contrarian.md        # Challenges assumptions (idea, round 4+)
 │   ├── simplifier.md        # YAGNI simplification (idea, round 6+)
 │   ├── ontologist.md        # Deep reframing (idea, round 8+)
-│   ├── builder.md           # Code execution in worktree isolation (build)
+│   ├── builder.md           # TDD code execution — inline or worktree-isolated (build)
 │   ├── reviewer.md          # 3-stage peer review (build)
 │   ├── retro-analyst.md     # Structured retro report (build)
 │   └── conflict-resolver.md # Merge conflict resolution (build)
