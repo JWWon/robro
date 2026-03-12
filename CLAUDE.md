@@ -23,9 +23,9 @@ Robro's planning pipeline prioritizes thoroughness over speed. The goal: collect
 
 These plugins shaped robro's architecture. Consult them when designing new skills or hooks:
 
-- **oh-my-claudecode** (`nicobailon/oh-my-claudecode`) — External state file pattern (`.omc/state/` → our `status.yaml` at plan root). Hooks read state files to inject focused guidance that survives context compression. Also: inline challenge lens pattern (read agent file, adopt that analytical perspective in-place instead of spawning a subagent).
-- **ouroboros** (`dnakov/ouroboros`) — Iterative review loops with strong hook guardrails. The "ralph loop" pattern: plan → review → revise → re-review until quality passes. Influenced our quality-driven iteration policy and the principle that hooks must keep the agent on track across long sessions.
-- **superpowers** (`anthropics/claude-code-superpowers`) — Structured status protocol for agent dispatch (`DONE | NEEDS_CONTEXT | BLOCKED`). Clean separation of skill orchestration vs agent execution. Influenced our agent status routing and the skill-as-orchestrator pattern.
+- **oh-my-claudecode** (`Yeachan-Heo/oh-my-claudecode`) — External state file pattern (`.omc/state/` → our `status.yaml` at plan root). Hooks read state files to inject focused guidance that survives context compression. Also: inline challenge lens pattern (read agent file, adopt that analytical perspective in-place instead of spawning a subagent).
+- **ouroboros** (`Q00/ouroboros`) — Iterative review loops with strong hook guardrails. The "ralph loop" pattern: plan → review → revise → re-review until quality passes. Influenced our quality-driven iteration policy and the principle that hooks must keep the agent on track across long sessions.
+- **superpowers** (`obra/superpowers`) — Structured status protocol for agent dispatch (`DONE | NEEDS_CONTEXT | BLOCKED`). Clean separation of skill orchestration vs agent execution. Influenced our agent status routing and the skill-as-orchestrator pattern.
 
 ### Pipeline Flow
 
