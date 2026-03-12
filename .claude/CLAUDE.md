@@ -119,4 +119,4 @@ Used by the `idea` and `spec` skills to gate progression:
 | Success Criteria | 25% |
 | Context Clarity | 15% |
 
-Threshold: `ambiguity ≤ 0.2` to proceed. Formula: `ambiguity = 1 - weighted_sum`.
+Threshold: `ambiguity ≤ 0.1` to proceed. Formula: `ambiguity = 1 - weighted_sum`.

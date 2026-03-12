@@ -33,7 +33,7 @@ These plugins shaped robro's architecture. Consult them when designing new skill
 /robro:idea (PM) ──→ idea.md ──→ /robro:spec (EM) ──→ plan.md + spec.yaml ──→ /robro:build (Builder) ──→ working code
 ```
 
-The planning phase is the foundation. No code gets written until idea.md has ambiguity ≤ 0.2, plan.md passes automated review, and spec.yaml cross-validates against both.
+The planning phase is the foundation. No code gets written until idea.md has ambiguity ≤ 0.1, plan.md passes automated review, and spec.yaml cross-validates against both.
 
 ## Plugin Configuration
 
@@ -112,7 +112,7 @@ robro/
 
 ### Core Skills
 
-- **`/robro:idea`** — Product Manager role. Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring with a ≤ 0.2 threshold gate.
+- **`/robro:idea`** — Product Manager role. Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring with a ≤ 0.1 threshold gate.
 - **`/robro:spec`** — Engineering Manager role. Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness.
 - **`/robro:build`** — Builder role. Autonomously implements plan.md through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Uses stop hook auto-continue for multi-session chaining. Produces working code with all spec.yaml items flipped to `passes: true`.
 
