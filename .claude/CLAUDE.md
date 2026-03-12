@@ -57,60 +57,88 @@ Available events (case-sensitive): `PreToolUse`, `PostToolUse`, `PostToolUseFail
 
 Hook types: `command` (shell), `prompt` (LLM eval), `agent` (agentic verifier).
 
-## Agent Dispatch Rules
+<!-- robro:managed:start [0.1.0] -->
+## Robro Plugin
 
-- Skills orchestrate. Agents execute. Never give an agent user-facing interaction (AskUserQuestion).
+Robro extends Claude Code with a structured planning and execution pipeline.
+
+### Pipeline
+
+```
+/robro:idea (PM) → idea.md → /robro:spec (EM) → plan.md + spec.yaml → /robro:build (Builder) → working code
+```
+
+### Available Skills
+
+| Skill | Role | Description |
+|-------|------|-------------|
+| `/robro:idea` | Product Manager | Socratic interview that transforms vague ideas into structured requirements (idea.md). Uses ambiguity scoring with ≤ 0.1 threshold. |
+| `/robro:spec` | Engineering Manager | Converts idea.md into phased implementation plan (plan.md) and validation checklist (spec.yaml). Multi-agent review loop. |
+| `/robro:build` | Builder | Autonomously implements plan.md through evolutionary sprint cycles. Dispatches builder agents, runs peer review, evolves project knowledge. |
+| `/robro:setup` | Setup | Configures project for robro: CLAUDE.md section, MCP/skill recommendations, .gitignore rules. |
+| `/robro:clean-memory` | Cleanup | Analyzes completed plans for patterns, recommends improvements, then deletes confirmed plans. |
+
+### Plan Artifacts
+
+Plans live in `docs/plans/YYMMDD_{name}/`:
+- `idea.md` — Product requirements from /robro:idea
+- `plan.md` — Phased implementation tasks from /robro:spec
+- `spec.yaml` — Validation checklist (source of truth for testing)
+- `status.yaml` — Pipeline state (drives hooks, gitignored)
+- `spec-mutations.log` — Append-only audit trail for spec changes during build
+
+### Key Rules
+
+- **Skills orchestrate, agents execute.** Only skills interact with the user. Agents receive context, do work, return structured output.
+- **No code without a spec.** Implementation requires plan.md + spec.yaml.
+- **Status.yaml drives hooks.** All pipeline state is persisted to status.yaml at plan root.
+- **Quality-driven iteration.** Review loops exit on passing verdicts, not arbitrary caps.
+- **Spec immutability during build.** Checklist items can never be deleted or silently modified. Changes use ADD or SUPERSEDE operations, logged to spec-mutations.log.
+
+### Agent Dispatch
+
 - Always check the agent's **Status** field first (`DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`) before processing output.
 - `NEEDS_CONTEXT` → provide missing info and re-dispatch. `BLOCKED` → fix or escalate to user.
-- Critic verdicts (PASS/ACCEPT_WITH_RESERVATIONS/NEEDS_WORK/REJECT) are separate from status — a REJECT verdict still has status DONE.
+- Critic verdicts (PASS/ACCEPT_WITH_RESERVATIONS/NEEDS_WORK/REJECT) are separate from status.
 - Challenge agents (contrarian, simplifier, ontologist) are applied as inline lenses first. Only dispatch as subagent for deep investigation.
 
-## Iteration Policy
+### Iteration Policy
 
-**Planning skills (idea, spec):** No arbitrary iteration caps. Loops exit only on passing verdicts from both Architect and Critic. Every 3 iterations, inform the user of progress and ask: continue, try different approach, or accept with noted concerns. Never silently give up.
+**Planning (/robro:idea, /robro:spec):** No arbitrary iteration caps. Loops exit on passing verdicts from both Architect and Critic. Every 3 iterations, check in with the user. Never silently give up.
 
-**Build skill:** No user check-ins during autonomous execution. The user CAN intervene at any time but is never blocked on. Notifications deferred — user can check status.yaml or build-progress.md for current state. Sprint hard cap: 30. Stop hook reinforcement cap: 50 per session. Circuit breakers: bail on rate limit (429), bail on high reinforcement count + stop_hook_active flag.
+**Build (/robro:build):** Fully autonomous — no user check-ins during execution. Sprint hard cap: 30. Stop hook reinforcement cap: 50 per session. Circuit breakers: rate limit (429), high reinforcement count.
 
 Spec.yaml checklist items during build use restricted mutation: ADD or SUPERSEDE only, never in-place modification. Every mutation logged to spec-mutations.log.
 
-## Active Hooks
+### Hooks
 
-| Event | Script | Purpose |
-|-------|--------|---------|
-| SessionStart | `session-start.sh` | Detect active pipeline phase, inject state + rules for resume |
-| UserPromptSubmit | `keyword-detector.sh` | Detect idea/spec keywords, suggest skills |
-| UserPromptSubmit | `pipeline-guard.sh` | Re-inject planning workflow rules every prompt (survives compression) |
-| PreToolUse (Write\|Edit) | `spec-gate.sh` | Warn if writing source code without a spec |
-| PostToolUse (Write\|Edit) | `drift-monitor.sh` | Show spec progress when actively implementing |
-| PreCompact | `pre-compact.sh` | Remind agent to persist pipeline state before context compression |
-| Stop | `stop-hook.sh` | Auto-continue build execution with circuit breakers |
-| PostToolUseFailure | `error-tracker.sh` | Track recent errors for rate limit detection |
+Robro hooks fire fresh on every event to inject focused guidance that survives context compression. The injection pattern is "you are HERE, do THIS next" — not a rules dump.
 
-## Hook Design Principle
+| Event | Purpose |
+|-------|---------|
+| SessionStart | Detect active pipeline phase, restore state for resume |
+| UserPromptSubmit | Detect keywords → suggest skills; re-inject planning rules every prompt |
+| PreToolUse (Write/Edit) | Warn if writing code without an approved spec |
+| PostToolUse (Write/Edit) | Track progress against active spec during implementation |
+| PreCompact | Persist pipeline state before context compression |
+| Stop | Auto-continue build execution with circuit breakers |
+| PostToolUseFailure | Track recent errors for rate limit detection |
 
-**Skills get compressed. Hooks don't.** As context grows, Claude compresses older messages — including skill instructions. Hooks fire fresh every time, regardless of context length. Critical planning rules live in hooks so they survive long sessions:
-- `pipeline-guard.sh` reads `status.yaml` at plan root and injects focused state: current step, next action, exit gate
-- `session-start.sh` restores full pipeline state on session resume
-- `pre-compact.sh` ensures state is persisted before compression
+### Build Agents
 
-**Injection pattern**: "You are HERE, do THIS next" — not a rules dump. The `next` field in status.yaml is written by the skill with full conversation context, so hooks inject precise guidance even after compression.
+| Agent | Role |
+|-------|------|
+| Builder | TDD task execution (inline or worktree-isolated) |
+| Reviewer | 3-stage peer review (mechanical → semantic → consensus) |
+| Retro Analyst | Structured sprint retrospective |
+| Conflict Resolver | Merge conflict resolution from parallel dispatches |
+| Researcher | Context gathering and JIT knowledge |
+| Architect | Semantic review |
+| Critic | Consensus gate |
 
-## Build Phase Agents
+### Ambiguity Scoring
 
-Four new agents support the build skill:
-- **Builder** (`agents/builder.md`): Executes TDD tasks inline or in worktree isolation (determined at dispatch time via `isolation: "worktree"` parameter). Gets JIT knowledge + project rules context.
-- **Reviewer** (`agents/reviewer.md`): Runs 3-stage peer review. Multi-agent consensus (Architect + Critic + Reviewer) replaces multi-model consensus.
-- **Retro Analyst** (`agents/retro-analyst.md`): Produces structured retro report (Broken Assumptions, Emerged Patterns, Knowledge Gaps, Proposed Mutations, Proposed Level-ups).
-- **Conflict Resolver** (`agents/conflict-resolver.md`): Resolves merge conflicts from squash merges of worktree-isolated agent dispatches. Understands intent from both sides.
-
-Existing agents reused during build:
-- **Researcher**: Sprint 1 pre-flight, Brief phase context gathering, JIT knowledge
-- **Architect**: Semantic review stage
-- **Critic**: Consensus gate stage
-
-## Ambiguity Scoring Model
-
-Used by the `idea` and `spec` skills to gate progression:
+Used by idea and spec skills to gate progression:
 
 | Dimension | Weight |
 |-----------|--------|
@@ -119,4 +147,9 @@ Used by the `idea` and `spec` skills to gate progression:
 | Success Criteria | 25% |
 | Context Clarity | 15% |
 
-Threshold: `ambiguity ≤ 0.1` to proceed. Formula: `ambiguity = 1 - weighted_sum`.
+Threshold: ambiguity ≤ 0.1 (formula: `1 - weighted_sum`).
+
+### Resuming Interrupted Work
+
+If a pipeline was interrupted, robro auto-detects the state on session start. Check `status.yaml` in the active plan directory for current position.
+<!-- robro:managed:end -->

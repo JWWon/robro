@@ -4,11 +4,22 @@ Your project companion -- a Claude Code plugin that transforms a simple agent in
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## Why robro?
+
+Claude Code is powerful, but on complex tasks it tends to jump straight into code -- skipping requirements gathering, writing without a plan, and losing context in long sessions. You end up steering manually, re-explaining constraints, and catching scope drift.
+
+Robro fixes this by adding structure where it matters most: **before code gets written**. It gives Claude three distinct roles -- a PM who interviews you, an EM who plans the work, and a Builder who executes autonomously -- so you get disciplined execution without micromanaging.
+
 ## What is robro?
 
 Robro (robot + bro) is a Claude Code plugin built around the coworker vibe -- it's a companion, not a tool. It extends Claude Code with structured skills, agents, and hooks that turn vague ideas into shipped code through a disciplined planning and execution pipeline.
 
 Think of it as having a PM, an EM, and a Builder on your team -- each with their own role, working together to take your project from "I have an idea" to "here's the working code."
+
+## Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed and configured
+- A project repository (robro stores plan artifacts in `docs/plans/`)
 
 ## Pipeline Overview
 
@@ -38,13 +49,17 @@ The planning phase is the foundation. No code gets written until the idea has lo
 
 ## Installation
 
-Install from the Claude Code plugin marketplace:
+### From GitHub
 
 ```bash
-claude plugin install robro
+# Clone the repository
+git clone https://github.com/JWWon/robro.git
+
+# Load the plugin from the cloned directory
+claude --plugin-dir /path/to/robro
 ```
 
-For local development:
+### For development
 
 ```bash
 # Load the plugin from the repo directory
@@ -64,6 +79,47 @@ claude --debug
 3. **Gather requirements** -- Run `/robro:idea` for a structured Socratic interview that refines your idea into clear requirements.
 4. **Plan the implementation** -- Run `/robro:spec` to turn requirements into a phased technical plan with a validation checklist.
 5. **Build autonomously** -- Run `/robro:build` to execute the plan through TDD sprint cycles until all spec items pass.
+
+## How It Works
+
+### Architecture
+
+Robro follows a core design principle: **skills orchestrate, agents execute**. Skills handle user interaction and decision-making. Agents are dispatched as workers that receive context, perform analysis, and return structured output.
+
+```
+Skills (user-facing)          Agents (workers)
+--------------------          ----------------
+/robro:idea  ───────────────> Researcher, Critic, Contrarian, Simplifier, Ontologist
+/robro:spec  ───────────────> Researcher, Architect, Critic, Planner
+/robro:build ───────────────> Builder, Reviewer, Retro Analyst, Conflict Resolver
+```
+
+### Hooks keep the agent on track
+
+As conversations grow long, Claude compresses earlier messages -- including skill instructions. Robro uses **hooks** that fire fresh on every event, reading on-disk state (`status.yaml`) to inject focused guidance:
+
+- **Pipeline guard** -- Re-injects planning rules every prompt so the agent never forgets its current phase
+- **Spec gate** -- Warns if code is being written without an approved spec
+- **Drift monitor** -- Tracks progress against the active spec during implementation
+- **Stop hook** -- Auto-continues build execution across context limits with circuit breakers
+
+### Plan artifacts
+
+Each plan lives in `docs/plans/YYMMDD_{name}/`:
+
+| File | Purpose |
+|------|---------|
+| `idea.md` | Product requirements, constraints, success criteria |
+| `plan.md` | Phased task breakdown with dependency ordering |
+| `spec.yaml` | Validation checklist -- the source of truth for what "done" means |
+| `status.yaml` | Execution state (gitignored) |
+
+### Quality gates
+
+- **Ambiguity scoring** -- Ideas must reach an ambiguity score of 0.1 or below before spec work begins
+- **Multi-agent review** -- Plans are reviewed by Architect and Critic agents in iterative loops until they pass
+- **Spec immutability** -- During build, checklist items can never be deleted or silently modified. Changes use ADD or SUPERSEDE operations, logged to an append-only audit trail
+- **3-stage peer review** -- Build output goes through mechanical checks, semantic review, and multi-agent consensus
 
 ## Credits
 
