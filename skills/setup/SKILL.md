@@ -334,8 +334,77 @@ This step is designed to produce identical results on re-run:
 - Running `/robro:setup` twice in succession produces identical `.gitignore` content
 - Rules are compared as exact line matches, so partial matches or substrings do not cause false positives
 
+### Step 3.5: Settings.json Configuration
+
+Configure `.claude/settings.json` to enable experimental features required by robro.
+
+#### 3.5a. Define Required Env Vars
+
+The setup skill ensures these env vars are present:
+
+| Env Var | Value | Purpose |
+|---------|-------|---------|
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `"1"` | Enable Claude Code Agent Teams for parallel execution |
+
+#### 3.5b. Check Existing Settings
+
+1. Use the Read tool to read `${PROJECT_ROOT}/.claude/settings.json`
+2. If the Read tool returns a "file does not exist" error, the file does not exist — proceed to 3.5c (create case)
+3. If the file exists, parse its JSON content and check if the `env` object contains the required key with the correct value
+
+#### 3.5c. Apply Settings
+
+**If `.claude/settings.json` does NOT exist**:
+
+Ensure the `.claude/` directory exists (use `mkdir -p`). Create the file with the Write tool:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Report: **".claude/settings.json: created with Teams env var"**
+
+**If `.claude/settings.json` exists but is missing the env var**:
+
+Use the Edit tool to add the env var to the `env` block. If no `env` block exists, add one. Preserve all existing content.
+
+For example, if the file currently contains:
+```json
+{
+  "permissions": { "defaultMode": "plan" }
+}
+```
+
+Update it to:
+```json
+{
+  "permissions": { "defaultMode": "plan" },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Report: **".claude/settings.json: added Teams env var"**
+
+**If the env var already exists with the correct value**:
+
+Report: **".claude/settings.json: Teams already enabled — no changes"**
+
+#### 3.5d. Idempotency
+
+This step produces identical results on re-run:
+- If the env var already exists with value `"1"`, no changes are made
+- If the file has other env vars, they are preserved
+- If the file has other settings (permissions, hooks, etc.), they are preserved
+
 ### Step 4: Completion Summary
 Report all actions taken:
 - CLAUDE.md: created/updated/unchanged
 - MCPs/skills: installed count / already configured count / skipped count
 - .gitignore: created/updated/unchanged
+- Settings.json: created/updated/unchanged
