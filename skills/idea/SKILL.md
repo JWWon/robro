@@ -45,7 +45,7 @@ skill: idea
 step: "3"
 detail: "Round 7, targeting constraints (ambiguity: 0.25)"
 next: "Ask about scalability limits — user mentioned this but hasn't defined bounds"
-gate: "ambiguity ≤ 0.2 AND user confirms requirements, criteria, approach"
+gate: "ambiguity ≤ 0.1 AND user confirms requirements, criteria, approach"
 ```
 
 Update `detail` and `next` after EVERY round. Update `step` at step transitions. Set `skill: none` when the skill completes.
@@ -70,7 +70,7 @@ skill: idea
 step: "0"
 detail: "Initializing plan directory"
 next: "Classify type and scan codebase"
-gate: "ambiguity ≤ 0.2 AND user confirms requirements, criteria, approach"
+gate: "ambiguity ≤ 0.1 AND user confirms requirements, criteria, approach"
 ```
 
 **Resume protocol**: If a plan directory matching this topic already exists:
@@ -232,7 +232,7 @@ Formula: `ambiguity = 1 - (goal*0.35 + constraint*0.25 + criteria*0.25 + context
 
 **Report format**:
 ```
-Ambiguity: {score} (target: ≤ 0.2)
+Ambiguity: {score} (target: ≤ 0.1)
   Goal: {score} | Constraints: {score} | Criteria: {score} | Context: {score}
   Weakest: {dimension} — next question will target this.
 ```
@@ -325,7 +325,7 @@ Only proceed to writing once all three confirmations pass. If the user requests 
 
 ### Step 9: Completion Gate
 
-**The interview is complete when ambiguity ≤ 0.2 AND all three confirmations pass.**
+**The interview is complete when ambiguity ≤ 0.1 AND all three confirmations pass.**
 
 If the user wants to stop early:
 1. Warn them with specific dimension scores
@@ -390,7 +390,7 @@ dimensions:
 {Existing codebase context, brownfield analysis, relevant patterns, tech stack}
 
 ## Open Questions
-- {remaining uncertainties, if any — empty if ambiguity ≤ 0.2}
+- {remaining uncertainties, if any — empty if ambiguity ≤ 0.1}
 
 ## Key Research Findings
 {Summary of critical findings from research/ that informed requirements}

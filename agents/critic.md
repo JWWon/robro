@@ -93,13 +93,13 @@ Score each dimension 0.0 to 1.0:
 | Success Criteria   | 30%                 | 25%                 |
 | Context Clarity    | —                   | 15%                 |
 
-**Threshold**: ambiguity must be ≤ 0.2 to pass.
+**Threshold**: ambiguity must be ≤ 0.1 to pass.
 
 ## Verdicts
 
-- **PASS**: Ambiguity ≤ 0.2, no CRITICAL findings, at most minor gaps
-- **NEEDS_WORK**: Ambiguity > 0.2 OR any CRITICAL findings — with specific remediation steps
-- **ACCEPT_WITH_RESERVATIONS**: Ambiguity ≤ 0.2 but notable MAJOR findings that should be tracked
+- **PASS**: Ambiguity ≤ 0.1, no CRITICAL findings, at most minor gaps
+- **NEEDS_WORK**: Ambiguity > 0.1 OR any CRITICAL findings — with specific remediation steps
+- **ACCEPT_WITH_RESERVATIONS**: Ambiguity ≤ 0.1 but notable MAJOR findings that should be tracked
 - **REJECT**: Fundamental issues that require re-interviewing or re-thinking the approach
 
 ## Status Protocol
