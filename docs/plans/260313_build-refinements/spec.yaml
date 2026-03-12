@@ -1,0 +1,274 @@
+meta:
+  id: "260313_build-refinements"
+  idea: idea.md
+  plan: plan.md
+  created: "2026-03-13T00:00:00Z"
+  updated: "2026-03-13T00:00:00Z"
+  ambiguity_score: 0.11
+
+goal: "Refine the build skill's execution model to use inline builders for small/same-category tasks, Claude Code Teams for large/multi-topic parallel work, squash merge for clean history, and auto-cleanup for worktree hygiene."
+
+constraints:
+  - "isolation: worktree in agent frontmatter forces worktree on every dispatch — use the Agent tool dispatch-time isolation parameter for dynamic per-dispatch choice instead"
+  - "Claude Code Teams require CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 in settings.json env block"
+  - "Teams have limitations: no session resume, task status lag, slow shutdown, one team per session, no nested teams"
+  - "Team teammates lack the Agent tool — cannot spawn worktree-isolated subagents"
+  - "Teams use non-overlapping file assignments for conflict avoidance"
+  - "Squash merge requires git branch -D (force delete) instead of git branch -d"
+  - ".claude/settings.json may not exist yet in target projects"
+
+non_goals:
+  - "Backward-compatible worktree builder fallback"
+  - "Manual cleanup commands or on-demand cleanup skill"
+  - "File-overlap heuristic for inline-vs-Teams decision"
+  - "Hard cap on inline subagent count"
+  - "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD env var (undocumented)"
+
+context:
+  type: "brownfield"
+  tech_stack:
+    - "Claude Code plugin system (markdown agents, skills, shell hooks)"
+    - "Agent tool with dispatch-time isolation parameter"
+    - "Claude Code Teams API (TeamCreate, TaskCreate, SendMessage)"
+    - "Git worktrees for agent isolation"
+  existing_patterns:
+    - "Builder agent with isolation: worktree frontmatter (to be removed)"
+    - "Heads-down phase with worktree-per-builder model (to be rewritten)"
+    - "Brief phase with file-overlap detection D9 (to be extended with path classification)"
+    - "Setup skill with CLAUDE.md management, MCP detection, .gitignore (to add settings.json)"
+  key_files:
+    - "agents/builder.md"
+    - "agents/conflict-resolver.md"
+    - "skills/build/heads-down-phase.md"
+    - "skills/build/brief-phase.md"
+    - "skills/build/SKILL.md"
+    - "skills/setup/SKILL.md"
+    - "scripts/pipeline-guard.sh"
+    - "CLAUDE.md"
+    - ".claude/CLAUDE.md"
+
+architecture_decisions:
+  - decision: "Remove isolation: worktree from builder.md frontmatter"
+    rationale: "Agent tool dispatch-time isolation parameter enables per-dispatch choice"
+    alternatives: ["Keep frontmatter + create second builder-inline.md"]
+  - decision: "3-path execution model (inline, isolated, Teams)"
+    rationale: "Matches task characteristics: inline for speed, isolated for safety, Teams for coordination"
+    alternatives: ["Agent-only (no Teams)", "Teams-first (no isolation)"]
+  - decision: "Teams use non-overlapping file sets, not worktrees"
+    rationale: "Teammates lack the Agent tool — cannot spawn worktree-isolated subagents"
+    alternatives: ["Force EnterWorktree in teammate prompts"]
+  - decision: "Brief phase classifies execution path per level"
+    rationale: "Brief already has file-overlap detection — natural place for path routing"
+    alternatives: ["Heads-down decides dynamically"]
+  - decision: "Squash merge only for isolated path"
+    rationale: "Only isolated dispatches create worktree branches; inline and Teams write directly"
+    alternatives: ["Squash merge for all paths"]
+  - decision: "Drop CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"
+    rationale: "Not found in any official docs — undocumented env var"
+    alternatives: ["Add it anyway and verify later"]
+
+sections:
+  - id: S1
+    name: "Execution Model"
+    description: "Builder agent dual-mode support and 3-path execution in heads-down phase"
+    requirements:
+      - "Builder agent works inline by default (no forced worktree)"
+      - "Inline builders can run in parallel for same-category small tasks"
+      - "Worktree-isolated builders dispatched via Agent tool isolation parameter"
+      - "Teams handle multi-topic coordination with non-overlapping file sets"
+      - "Brief phase classifies levels into execution paths"
+
+  - id: S2
+    name: "Merge & Cleanup"
+    description: "Squash merge for isolated path, auto-cleanup of worktrees and branches"
+    requirements:
+      - "Squash merge replaces --no-ff for worktree branch merges"
+      - "Auto-cleanup (worktree remove + branch force-delete) immediately after merge"
+      - "Stale worktree cleanup in Brief phase"
+
+  - id: S3
+    name: "Agent Updates"
+    description: "Builder and conflict-resolver agent descriptions updated for new model"
+    requirements:
+      - "Conflict-resolver reflects squash merge model"
+
+  - id: S4
+    name: "Setup Skill Enhancement"
+    description: "Settings.json management for experimental feature flags"
+    requirements:
+      - "Setup skill creates/updates .claude/settings.json with Teams env var"
+
+  - id: S5
+    name: "Documentation Consistency"
+    description: "All documentation references updated for new execution model"
+    requirements:
+      - "CLAUDE.md and .claude/CLAUDE.md reflect new agent descriptions"
+      - "Pipeline-guard hook injects correct heads-down guidance"
+
+checklist:
+  - id: C1
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "builder.md has no isolation: worktree in frontmatter and supports dual-mode"
+    acceptance_criteria: "agents/builder.md contains no 'isolation:' line in frontmatter. Description does not contain 'worktree isolation'. System prompt references both inline and worktree modes."
+    test_type: manual
+    test_plan: |
+      1. Read agents/builder.md
+      2. Check YAML frontmatter — no 'isolation:' field present
+      3. Check description field — does not contain 'worktree isolation'
+      4. Check system prompt line — references 'inline' and 'worktree-isolated'
+    passes: false
+
+  - id: C2
+    section: S1
+    phase: 2
+    task: "2.1"
+    description: "Heads-down phase supports inline execution path (no isolation)"
+    acceptance_criteria: "heads-down-phase.md contains Path A (Inline) section that dispatches builders without isolation parameter. No cap on inline agent count."
+    test_type: manual
+    test_plan: |
+      1. Read skills/build/heads-down-phase.md
+      2. Find 'Path A: Inline' section
+      3. Verify Agent dispatch does NOT include isolation parameter
+      4. Verify no mention of agent count cap for inline path
+    passes: false
+
+  - id: C3
+    section: S1
+    phase: 2
+    task: "2.1"
+    description: "Heads-down phase supports Teams execution path (multi-topic coordination)"
+    acceptance_criteria: "heads-down-phase.md contains Path C (Teams) section with TeamCreate, TaskCreate, SendMessage usage. Max 5 teammates. Non-overlapping file assignment."
+    test_type: manual
+    test_plan: |
+      1. Read skills/build/heads-down-phase.md
+      2. Find 'Path C: Teams' section
+      3. Verify TeamCreate, TaskCreate, SendMessage tool usage
+      4. Verify max 5 teammates cap
+      5. Verify non-overlapping file assignment instruction
+    passes: false
+
+  - id: C4
+    section: S1
+    phase: 2
+    task: "2.1"
+    description: "Heads-down phase supports isolated execution path (worktree per agent)"
+    acceptance_criteria: "heads-down-phase.md contains Path B (Isolated) section that dispatches builders with isolation: worktree parameter."
+    test_type: manual
+    test_plan: |
+      1. Read skills/build/heads-down-phase.md
+      2. Find 'Path B: Isolated Parallel' section
+      3. Verify Agent dispatch includes isolation: "worktree" parameter
+    passes: false
+
+  - id: C5
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "Squash merge replaces --no-ff for worktree branches"
+    acceptance_criteria: "heads-down-phase.md uses 'git merge --squash' + explicit 'git commit' in the isolated path. No references to '--no-ff'."
+    test_type: manual
+    test_plan: |
+      1. Read skills/build/heads-down-phase.md
+      2. Search for 'git merge --squash' — must exist
+      3. Search for '--no-ff' — must not exist
+    passes: false
+
+  - id: C6
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "Auto-cleanup after squash merge (worktree remove + branch force-delete)"
+    acceptance_criteria: "heads-down-phase.md contains 'git worktree remove' and 'git branch -D' immediately after squash merge in the isolated path."
+    test_type: manual
+    test_plan: |
+      1. Read skills/build/heads-down-phase.md
+      2. Find squash merge section in Path B
+      3. Verify 'git worktree remove' command follows merge
+      4. Verify 'git branch -D' command follows worktree removal
+    passes: false
+
+  - id: C7
+    section: S3
+    phase: 1
+    task: "1.2"
+    description: "Conflict-resolver reflects squash merge model"
+    acceptance_criteria: "agents/conflict-resolver.md description references 'worktree-isolated agent dispatches' and 'squash merges'. System prompt references 'squash-merging'."
+    test_type: manual
+    test_plan: |
+      1. Read agents/conflict-resolver.md
+      2. Check frontmatter description — contains 'squash merges'
+      3. Check system prompt — contains 'squash-merging'
+    passes: false
+
+  - id: C8
+    section: S1
+    phase: 2
+    task: "2.2"
+    description: "Brief phase classifies execution paths and cleans stale worktrees"
+    acceptance_criteria: "brief-phase.md contains execution path classification logic (inline/isolated/Teams criteria), stale worktree cleanup step, and no 'max worktrees' cap."
+    test_type: manual
+    test_plan: |
+      1. Read skills/build/brief-phase.md
+      2. Find 'Classify execution path' section with inline/isolated/Teams criteria
+      3. Find stale worktree cleanup step with git worktree commands
+      4. Search for 'max worktrees' — must not exist
+    passes: false
+
+  - id: C9
+    section: S4
+    phase: 3
+    task: "3.1"
+    description: "Setup skill creates/updates .claude/settings.json with Teams env var"
+    acceptance_criteria: "skills/setup/SKILL.md contains Step 3.5 that manages .claude/settings.json with CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS env var. Handles create and update cases. Idempotent."
+    test_type: manual
+    test_plan: |
+      1. Read skills/setup/SKILL.md
+      2. Find 'Step 3.5: Settings.json Configuration' section
+      3. Verify CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is the target env var
+      4. Verify create case (file doesn't exist) is handled
+      5. Verify update case (file exists, merge env vars) is handled
+      6. Verify idempotency section exists
+    passes: false
+
+  - id: C10
+    section: S5
+    phase: 3
+    task: "3.2"
+    description: "Pipeline-guard hook injects correct heads-down guidance"
+    acceptance_criteria: "scripts/pipeline-guard.sh heads-down case mentions 'inline, isolated, or Teams' and 'Squash merge'. No reference to 'Merge worktrees after each level'."
+    test_type: manual
+    test_plan: |
+      1. Read scripts/pipeline-guard.sh
+      2. Find heads-down case (around line 102)
+      3. Verify text mentions 'inline, isolated, or Teams'
+      4. Verify 'Squash merge' is mentioned
+      5. Verify old text 'Merge worktrees after each level' is gone
+    passes: false
+
+  - id: C11
+    section: S5
+    phase: 4
+    task: "4.1"
+    description: "CLAUDE.md builder description updated"
+    acceptance_criteria: "CLAUDE.md builder.md entry references 'inline or worktree-isolated' instead of 'worktree isolation'."
+    test_type: manual
+    test_plan: |
+      1. Read CLAUDE.md
+      2. Find builder.md entry in directory structure
+      3. Verify it says 'inline or worktree-isolated'
+    passes: false
+
+  - id: C12
+    section: S5
+    phase: 4
+    task: "4.2"
+    description: ".claude/CLAUDE.md agent descriptions updated"
+    acceptance_criteria: ".claude/CLAUDE.md builder description mentions 'inline or in worktree isolation' and 'dispatch time'. Conflict-resolver mentions 'squash merges'."
+    test_type: manual
+    test_plan: |
+      1. Read .claude/CLAUDE.md
+      2. Find Builder description — mentions 'dispatch time' and both modes
+      3. Find Conflict Resolver description — mentions 'squash merges'
+    passes: false
