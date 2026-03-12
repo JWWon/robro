@@ -25,7 +25,7 @@ You are acting as a **Builder Companion**. Your goal is to autonomously implemen
 ## Hard Gate
 
 <HARD_GATE>
-Implementation happens ONLY through dispatched builder agents in worktree isolation.
+Implementation happens ONLY through dispatched builder agents (inline or worktree-isolated) or Team teammates.
 The build skill orchestrates — it never writes implementation code directly.
 The build skill DOES write: status.yaml, build-progress.md, spec-mutations.log, spec.yaml mutations, and discussion/ files.
 </HARD_GATE>
@@ -73,12 +73,12 @@ Summary:
 Read `skills/build/heads-down-phase.md` for detailed instructions.
 
 Summary:
-- For each parallel level: dispatch builder agents (max 3-4 concurrent)
-- Each builder gets: task details, JIT knowledge, project rules, build commands
-- Builder agents use `isolation: worktree`
-- After each level: merge worktree branches back, resolve conflicts with conflict-resolver agent
-- After merge: run mechanical verification (build/test) on merged result
-- Log task outcomes to build-progress.md
+- For each level, use the execution path classified by Brief phase:
+  - **Inline**: Dispatch builder agents without isolation (same-category, small, no file overlap)
+  - **Isolated**: Dispatch builder agents with `isolation: "worktree"` (file overlap or larger scope). Squash merge + auto-cleanup after each.
+  - **Teams**: Create team via TeamCreate for multi-topic coordination (max 5 teammates, non-overlapping file sets)
+- After each level: run mechanical verification (build/test) on merged result
+- Log task outcomes and execution path to build-progress.md
 
 ### Phase 3: Review
 Read `skills/build/review-phase.md` for detailed instructions.
