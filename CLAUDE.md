@@ -14,7 +14,7 @@ Robro's planning pipeline prioritizes thoroughness over speed. The goal: collect
 
 - **Skills own interaction; agents are workers.** Only skills can use AskUserQuestion. Agents receive context, do analysis, return structured output. Never create an agent that needs to ask the user anything.
 - **Quality-driven iteration, not arbitrary caps.** Review loops exit on passing verdicts, not round counts. Every 3 iterations, check in with the user. Never silently give up.
-- **Status.yaml drives hooks.** Skills persist their position to `discussion/status.yaml`. Hooks read it and inject focused "you are HERE, do THIS next" — not a rules dump.
+- **Status.yaml drives hooks.** All skills persist their position to `status.yaml` at plan root (`docs/plans/*/status.yaml`). Hooks read it and inject focused "you are HERE, do THIS next" — not a rules dump.
 - **Skills get compressed. Hooks don't.** As context grows, Claude compresses skill instructions. Hooks fire fresh every time. Critical guardrails live in hooks + on-disk state files.
 - **Challenge modes are inline lenses.** Read the agent file, adopt that analytical perspective, apply it to current state. Only escalate to a subagent when inline analysis is insufficient.
 - **Structured agent status protocol.** All agents return `DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED`. The orchestrating skill routes on status before processing output.
@@ -23,14 +23,14 @@ Robro's planning pipeline prioritizes thoroughness over speed. The goal: collect
 
 These plugins shaped robro's architecture. Consult them when designing new skills or hooks:
 
-- **oh-my-claudecode** (`nicobailon/oh-my-claudecode`) — External state file pattern (`.omc/state/` → our `discussion/status.yaml`). Hooks read state files to inject focused guidance that survives context compression. Also: inline challenge lens pattern (read agent file, adopt that analytical perspective in-place instead of spawning a subagent).
+- **oh-my-claudecode** (`nicobailon/oh-my-claudecode`) — External state file pattern (`.omc/state/` → our `status.yaml` at plan root). Hooks read state files to inject focused guidance that survives context compression. Also: inline challenge lens pattern (read agent file, adopt that analytical perspective in-place instead of spawning a subagent).
 - **ouroboros** (`dnakov/ouroboros`) — Iterative review loops with strong hook guardrails. The "ralph loop" pattern: plan → review → revise → re-review until quality passes. Influenced our quality-driven iteration policy and the principle that hooks must keep the agent on track across long sessions.
 - **superpowers** (`anthropics/claude-code-superpowers`) — Structured status protocol for agent dispatch (`DONE | NEEDS_CONTEXT | BLOCKED`). Clean separation of skill orchestration vs agent execution. Influenced our agent status routing and the skill-as-orchestrator pattern.
 
 ### Pipeline Flow
 
 ```
-/robro:idea (PM) ──→ idea.md ──→ /robro:spec (EM) ──→ plan.md + spec.yaml ──→ (future: build)
+/robro:idea (PM) ──→ idea.md ──→ /robro:spec (EM) ──→ plan.md + spec.yaml ──→ /robro:build (Builder) ──→ working code
 ```
 
 The planning phase is the foundation. No code gets written until idea.md has ambiguity ≤ 0.2, plan.md passes automated review, and spec.yaml cross-validates against both.
@@ -70,7 +70,14 @@ robro/
 │   └── plugin.json          # Plugin manifest (only this goes here)
 ├── skills/                  # Agent skills (name/SKILL.md structure)
 │   ├── idea/SKILL.md        # PM: Socratic interview → idea.md
-│   └── spec/SKILL.md        # EM: Technical spec → plan.md + spec.yaml
+│   ├── spec/SKILL.md        # EM: Technical spec → plan.md + spec.yaml
+│   └── build/SKILL.md       # Builder: evolutionary sprint execution
+│       ├── brief-phase.md
+│       ├── heads-down-phase.md
+│       ├── review-phase.md
+│       ├── retro-phase.md
+│       ├── level-up-phase.md
+│       └── converge-phase.md
 ├── agents/                  # Subagent markdown definitions
 │   ├── researcher.md        # Web + codebase exploration (idea, spec)
 │   ├── architect.md         # Technical review (spec)
@@ -78,16 +85,22 @@ robro/
 │   ├── planner.md           # Task breakdown (spec)
 │   ├── contrarian.md        # Challenges assumptions (idea, round 4+)
 │   ├── simplifier.md        # YAGNI simplification (idea, round 6+)
-│   └── ontologist.md        # Deep reframing (idea, round 8+)
+│   ├── ontologist.md        # Deep reframing (idea, round 8+)
+│   ├── builder.md           # Code execution in worktree isolation (build)
+│   ├── reviewer.md          # 3-stage peer review (build)
+│   ├── retro-analyst.md     # Structured retro report (build)
+│   └── conflict-resolver.md # Merge conflict resolution (build)
 ├── hooks/
 │   └── hooks.json           # Event handler config
 ├── scripts/                 # Hook shell scripts
 │   ├── session-start.sh     # Inject pipeline state + skill awareness on session start
-│   ├── keyword-detector.sh  # Detect idea/spec keywords in prompts
+│   ├── keyword-detector.sh  # Detect idea/spec/build keywords in prompts
 │   ├── pipeline-guard.sh    # Re-inject planning rules on every prompt (survives compression)
-│   ├── spec-gate.sh         # Warn on Write/Edit without a spec
-│   ├── drift-monitor.sh     # Track progress against active spec
-│   └── pre-compact.sh       # Persist pipeline state before context compression
+│   ├── spec-gate.sh         # Warn on Write/Edit without a spec + build scope check
+│   ├── drift-monitor.sh     # Track progress against active spec + build sprint context
+│   ├── pre-compact.sh       # Persist pipeline state before context compression
+│   ├── stop-hook.sh         # Auto-continue build execution with circuit breakers
+│   └── error-tracker.sh     # Track recent errors for rate limit detection
 └── docs/plans/              # Generated plan artifacts (per project)
     └── YYMMDD_{name}/
         ├── idea.md           # Product requirements (from /robro:idea)
@@ -101,6 +114,7 @@ robro/
 
 - **`/robro:idea`** — Product Manager role. Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring with a ≤ 0.2 threshold gate.
 - **`/robro:spec`** — Engineering Manager role. Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness.
+- **`/robro:build`** — Builder role. Autonomously implements plan.md through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Uses stop hook auto-continue for multi-session chaining. Produces working code with all spec.yaml items flipped to `passes: true`.
 
 ### Plan Artifacts
 
@@ -110,7 +124,26 @@ Each plan lives in `docs/plans/YYMMDD_{name}/`:
 - **`spec.yaml`** — Pure YAML. Validation source of truth. Checklist items with `passes: false/true` flags. All tests and verification derive from this file. Items can never be removed — only `passes` can be flipped.
 - **`research/`** — Gitignored. Temporal web/codebase findings gathered during interviews.
 - **`discussion/`** — Gitignored. Interview transcripts, agent deliberation logs.
+- **`spec-mutations.log`** — Append-only event log at plan root (alongside spec.yaml). Records every spec.yaml mutation with timestamp, sprint, operation (ADD/SUPERSEDE), item path, and rationale. Committed to git for audit trail.
+- **`status.yaml`** — At plan root (not discussion/). Gitignored. Tracks full lifecycle state (idea/spec/build). Drives hook injection and cross-session resume.
+- **`build-progress.md`** — In discussion/. Append-only implementation log with learnings, patterns, failures. Injected into agent context on session resume.
 - **`*.bak.*`** — Gitignored. Previous versions preserved before overwrites.
+
+### Spec Mutation Rules (Build Phase)
+
+During `/robro:build`, spec.yaml evolves through restricted mutations:
+
+- **ADD**: New checklist item with `passes: false`. Must reference an existing section.
+- **SUPERSEDE**: Mark an item as superseded. Original text preserved. Add `status: superseded` and `superseded_by: CXX` fields. Superseded items are excluded from completeness gate.
+- **FLIP**: Toggle `passes` from `false` to `true` (or `true` to `false` on regression).
+- **No in-place modification**: Item descriptions and acceptance criteria cannot be edited. To change an item, supersede it and add a replacement.
+
+Every mutation is logged to `spec-mutations.log` in tab-separated format:
+```
+{ISO-timestamp}\tSPRINT:{N}\t{ADD|SUPERSEDE|FLIP}\t{item-path}\t{value}\tREASON: {rationale}
+```
+
+The immutability rule from `/robro:spec` (items can never be removed or edited) is refined for build: items can be superseded (preserving the original) but never deleted or silently modified.
 
 ### Key Concepts
 

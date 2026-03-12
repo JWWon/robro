@@ -1,0 +1,596 @@
+meta:
+  id: "260312_execution-harness"
+  idea: idea.md
+  plan: plan.md
+  created: "2026-03-13T00:00:00Z"
+  updated: "2026-03-13T00:00:00Z"
+  ambiguity_score: 0.09
+
+goal: "Build a /robro:build skill that autonomously implements plan.md through evolutionary sprint cycles, proactively gathering current knowledge and evolving project-scoped agents and rules so that each sprint makes the project smarter — not just more complete."
+
+constraints:
+  - "Must stay within Claude Code's plugin system (skills, agents, hooks in markdown/shell)"
+  - "Project-scoped agents and rules must follow Claude Code conventions"
+  - "Project-scoped files live in the target project's .claude/ directory, not robro's plugin directory"
+  - "Hook scripts must be shell-based (bash)"
+  - "Plugin loads via claude --plugin-dir . — no separate setup or install steps"
+  - "Spec.yaml mutation event log must be parseable by shell scripts"
+  - "Max 3-4 concurrent git worktrees"
+  - "Sprint hard cap: 30"
+  - "Stop hook circuit breakers: max 50 reinforcements, bail on rate limit 429"
+  - "Must not break existing /robro:idea and /robro:spec workflows"
+  - "Level-up searches community references live at runtime via WebFetch/web search"
+  - "Level-up is fully autonomous — no user approval gates"
+  - "Spec mutation restricted to ADD and SUPERSEDE only (D3)"
+
+non_goals:
+  - "Team pipeline / N-agent coordination"
+  - "MCP server dependency (Python, SQLite, event sourcing)"
+  - "Human approval gates during execution"
+  - "Full event sourcing with database"
+
+context:
+  type: "brownfield"
+  tech_stack:
+    - "Claude Code plugin system"
+    - "Markdown skills (skills/*/SKILL.md)"
+    - "Markdown agents (agents/*.md)"
+    - "Shell hook scripts (scripts/*.sh)"
+    - "YAML state files (status.yaml)"
+    - "Markdown state files (build-progress.md)"
+    - "JSON hook config (hooks/hooks.json)"
+  existing_patterns:
+    - "Status.yaml driven hook injection (pipeline-guard.sh reads status, injects focused guidance)"
+    - "Dual skill switch (idea/spec cases in hooks)"
+    - "Agent status protocol (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED)"
+    - "Skill as orchestrator, agent as worker"
+    - "Progressive disclosure for skills (supporting files alongside SKILL.md)"
+  key_files:
+    - "hooks/hooks.json"
+    - "scripts/session-start.sh"
+    - "scripts/pipeline-guard.sh"
+    - "scripts/pre-compact.sh"
+    - "scripts/spec-gate.sh"
+    - "scripts/drift-monitor.sh"
+    - "scripts/keyword-detector.sh"
+    - "CLAUDE.md"
+    - ".claude/CLAUDE.md"
+    - ".gitignore"
+
+architecture_decisions:
+  - decision: "D1: Notifications deferred"
+    rationale: "Notification hook cannot be programmatically fired; OS-level notifications not desired; TUI notifications not yet feasible"
+    alternatives: ["OS-level osascript/notify-send", "Claude Code Notification hook event", "file-based log tailing"]
+  - decision: "D2: Multi-agent consensus (Architect + Critic + Reviewer)"
+    rationale: "Claude Code cannot route to different LLM models from within a plugin"
+    alternatives: ["Multi-model consensus", "single-reviewer pass/fail"]
+  - decision: "D3: Restricted spec mutation (ADD or SUPERSEDE only)"
+    rationale: "Prevents semantic drift while allowing evolution; superseded items preserve history"
+    alternatives: ["Full mutation (ADD/MODIFY/SUPERSEDE)", "strict immutability"]
+  - decision: "D4: Status.yaml at plan root stays gitignored"
+    rationale: "Temporal execution state should not pollute git history"
+    alternatives: ["Committed status.yaml", "discussion/ subfolder"]
+  - decision: "D5: spec-mutations.log at plan root, committed"
+    rationale: "Audit trail must survive across sessions and be reviewable in PRs"
+    alternatives: ["In discussion/ (gitignored)", "embedded in build-progress.md"]
+  - decision: "D6: Growth gate relaxed (2 consecutive no-action retros)"
+    rationale: "Correct plans should not be forced to mutate"
+    alternatives: ["Strict growth gate (must mutate)", "single no-action retro"]
+  - decision: "D7: Level-up quality gate with rollback manifest"
+    rationale: "Autonomous file creation in .claude/ needs safety net"
+    alternatives: ["No quality gate", "user approval gate"]
+  - decision: "D8: Progressive disclosure for SKILL.md (<400 lines main)"
+    rationale: "Long SKILL.md risks context overflow and compression artifacts"
+    alternatives: ["Single monolithic SKILL.md", "external config files"]
+  - decision: "D9: File-overlap prevention for parallelism"
+    rationale: "Prevents avoidable merge conflicts"
+    alternatives: ["Let conflicts happen and resolve", "static analysis of plan"]
+  - decision: "D10: No user check-ins during autonomous execution"
+    rationale: "Autonomous execution should not block on user input; user can intervene anytime"
+    alternatives: ["Keep 3-iteration check-in", "async notifications (deferred)"]
+  - decision: "D11: Sprint hard cap at 30"
+    rationale: "Safety net against infinite loops; matches Ouroboros default"
+    alternatives: ["Lower cap (10-15)", "no cap"]
+
+sections:
+  - id: S1
+    name: "Sprint Cycle"
+    description: "Core evolutionary sprint cycle with all 6 phases"
+    requirements:
+      - "Evolutionary sprint cycle with Brief, Heads-down, Review, Retro, Level-up, Converge"
+      - "Sprint-per-session with stop hook auto-continue"
+      - "Cross-session resume from status.yaml + spec.yaml + build-progress.md"
+
+  - id: S2
+    name: "Peer Review"
+    description: "3-stage validation pipeline"
+    requirements:
+      - "3-stage peer review: mechanical, semantic, consensus"
+      - "Failed mechanical checks block subsequent stages"
+      - "Multi-agent consensus (D2)"
+
+  - id: S3
+    name: "Self-Evolution"
+    description: "Project agents, skills, and rules creation/update"
+    requirements:
+      - "Self-evolving project agents, skills, and rules"
+      - "5-step Level-up flow with community reference search"
+      - "Quality gate with rollback manifest (D7)"
+
+  - id: S4
+    name: "Knowledge & Parallelism"
+    description: "JIT knowledge and parallel execution"
+    requirements:
+      - "Project-aware JIT knowledge gathering via context7 and web search"
+      - "Level-based parallel execution with git worktrees"
+      - "Agent-mediated conflict resolution"
+
+  - id: S5
+    name: "Auto-Continue & Circuit Breakers"
+    description: "Stop hook session chaining with safety mechanisms"
+    requirements:
+      - "Stop hook auto-continue with decision/block mechanism"
+      - "Circuit breakers: max 50, rate limit, context pressure, sprint cap"
+      - "Error tracking via PostToolUseFailure hook"
+
+  - id: S6
+    name: "Infrastructure & Integration"
+    description: "Hooks, gitignore, documentation updates"
+    requirements:
+      - "Status.yaml dual-path reading in all hooks"
+      - "All existing hooks work with build phase"
+      - "CLAUDE.md and .claude/CLAUDE.md documentation"
+
+checklist:
+  # S1: Sprint Cycle
+  - id: C1
+    section: S1
+    phase: 3
+    task: "3.1, 3.2"
+    description: "Build skill executes Brief phase: reads spec.yaml, identifies failing items, scans project rules, fetches JIT knowledge, plans parallel levels"
+    acceptance_criteria: "Brief phase reads spec.yaml, identifies items with passes:false, queries context7 for library docs, outputs a level plan for parallel execution"
+    test_type: manual
+    test_plan: |
+      1. Create a test plan.md and spec.yaml with known failing items
+      2. Run /robro:build and verify Brief phase output
+      3. Confirm JIT knowledge queries were made for referenced libraries
+      4. Confirm parallel level plan was generated with at least 1 level containing task IDs and no file-overlap violations
+    passes: false
+
+  - id: C2
+    section: S1
+    phase: 3
+    task: "3.1, 3.7"
+    description: "Multi-gate convergence terminates the loop when all 5 gates pass"
+    acceptance_criteria: "Converge phase checks: review gate, completeness gate (all non-superseded items passes:true), regression gate, growth gate (D6 relaxed), confidence gate. Loop stops when all pass."
+    test_type: manual
+    test_plan: |
+      1. Set up spec.yaml with all items passes:true, no superseded items
+      2. Provide a spec-mutations.log with at least one ADD entry
+      3. Run converge check and verify all 5 gates report PASS
+      4. Verify build sets skill:none in status.yaml
+    passes: false
+
+  - id: C3
+    section: S1
+    phase: 3
+    task: "3.7"
+    description: "Pathology detection fires correctly: spinning (3 similar errors), oscillation (contradictory), stagnation (no mutations 3 sprints)"
+    acceptance_criteria: "Spinning detected when same error appears 3+ times in build-progress.md. Oscillation detected when spec-mutations.log shows item flipped true->false multiple times. Stagnation detected when no FLIP/ADD/SUPERSEDE for 3 consecutive sprints."
+    test_type: manual
+    test_plan: |
+      1. Seed build-progress.md with 3 identical error messages across sprints
+      2. Run converge phase and verify spinning pathology is detected
+      3. Seed spec-mutations.log with oscillating FLIP entries
+      4. Run converge and verify oscillation detected
+      5. Clear mutations for 3 sprints, run converge, verify stagnation detected
+    passes: false
+
+  - id: C4
+    section: S3
+    phase: 3
+    task: "3.6"
+    description: "Free spec.yaml mutation with event log — ADD and SUPERSEDE only (D3)"
+    acceptance_criteria: "spec.yaml items can be added (passes:false) or superseded (status:superseded, superseded_by:CXX). No in-place modification. Every mutation appended to spec-mutations.log in tab-separated format."
+    test_type: manual
+    test_plan: |
+      1. Start with a spec.yaml containing C1-C5
+      2. Apply ADD mutation for C6 — verify C6 appears with passes:false
+      3. Apply SUPERSEDE C3 -> C7 — verify C3 has status:superseded and superseded_by:C7
+      4. Verify spec-mutations.log has 2 entries with correct tab-separated format
+      5. Verify original C3 description is preserved
+    passes: false
+
+  - id: C5
+    section: S3
+    phase: 3
+    task: "3.6"
+    description: "Level-up correctly distinguishes persona (agent) from procedure (skill) from constraint (rule)"
+    acceptance_criteria: "Level-up phase applies taxonomy: recurring domain expertise -> agent, step-by-step procedure -> skill, one-liner convention -> rule. Created files follow their type's Claude Code conventions."
+    test_type: manual
+    test_plan: |
+      1. Provide retro report with: an emerged expertise pattern, a recurring procedure, a simple convention
+      2. Run level-up and verify 3 files created in target project .claude/
+      3. Verify agent file has YAML frontmatter with name/description and system prompt body
+      4. Verify skill file has YAML frontmatter and SKILL.md format
+      5. Verify rule is appended to CLAUDE.md with proper formatting
+    passes: false
+
+  - id: C6
+    section: S3
+    phase: 3
+    task: "3.6"
+    description: "Level-up searches community references live at runtime before creating from scratch"
+    acceptance_criteria: "Before creating a new agent/skill, the level-up phase searches ComposioHQ/awesome-claude-skills and wshobson/agents via web tools. If match found, adapts existing pattern. Search failure falls back to creation from scratch with log entry."
+    test_type: manual
+    test_plan: |
+      1. Provide retro report proposing a level-up for a common pattern (e.g., 'code reviewer')
+      2. Run level-up and verify web search calls were made
+      3. Verify the created file references or adapts the found pattern
+      4. Simulate search failure and verify fallback to creation works
+    passes: false
+
+  # S1: Sprint Cycle (continued)
+  - id: C7
+    section: S1
+    phase: 3
+    task: "3.3"
+    description: "Builder agents execute tasks in worktree isolation with TDD methodology"
+    acceptance_criteria: "Builder agent dispatched with isolation:worktree frontmatter. Receives task details, JIT knowledge, project rules. Follows TDD: write failing test, verify fail, implement, verify pass, commit."
+    test_type: manual
+    test_plan: |
+      1. Dispatch builder agent with a simple task (create a function + test)
+      2. Verify worktree was created
+      3. Verify builder followed TDD sequence (test first, then implementation)
+      4. Verify commits exist on the worktree branch
+    passes: false
+
+  - id: C8
+    section: S4
+    phase: 3
+    task: "3.3"
+    description: "Independent tasks within a phase execute in parallel via git worktrees (max 3-4 concurrent)"
+    acceptance_criteria: "Tasks without mutual dependencies are dispatched simultaneously as separate builder agents. Each gets its own worktree. Maximum 3-4 concurrent. After level completes, branches merge back."
+    test_type: manual
+    test_plan: |
+      1. Create plan with 3 independent tasks in same phase
+      2. Run heads-down and verify 3 builder agents dispatched
+      3. Verify 3 separate worktree branches created
+      4. Verify all 3 branches merged back after level completes
+    passes: false
+
+  # S2: Peer Review
+  - id: C9
+    section: S2
+    phase: 3
+    task: "3.4"
+    description: "3-stage review runs in order: mechanical first, semantic if mechanical passes, consensus if semantic ambiguous"
+    acceptance_criteria: "Reviewer agent runs Stage 1 (build/lint/test) first. Only proceeds to Stage 2 if Stage 1 passes. Only proceeds to Stage 3 if Stage 2 returns AMBIGUOUS."
+    test_type: manual
+    test_plan: |
+      1. Run review with passing build/test — verify Stage 2 executes
+      2. Run review with failing build — verify Stage 2 does NOT execute
+      3. Run review where semantic returns AMBIGUOUS — verify consensus triggers
+    passes: false
+
+  - id: C10
+    section: S2
+    phase: 3
+    task: "3.4"
+    description: "Failed mechanical checks block the semantic stage"
+    acceptance_criteria: "When build, lint, or test fails, the reviewer reports FAIL at mechanical stage and does NOT dispatch semantic or consensus stages."
+    test_type: manual
+    test_plan: |
+      1. Introduce a deliberate test failure
+      2. Run review phase
+      3. Verify reviewer output shows mechanical FAIL
+      4. Verify no semantic analysis was performed
+    passes: false
+
+  # S1: Sprint Cycle (Retro)
+  - id: C11
+    section: S1
+    phase: 3
+    task: "3.5"
+    description: "Retro produces structured report with 5 sections that feeds Level-up"
+    acceptance_criteria: "Retro-analyst agent produces report with: Broken Assumptions, Emerged Patterns, Knowledge Gaps, Proposed Mutations, Proposed Level-ups. Report is saved to discussion/retro-sprint-{N}.md and parsed by Level-up phase."
+    test_type: manual
+    test_plan: |
+      1. Provide sprint data (review results, builder outputs, spec state)
+      2. Dispatch retro-analyst and collect report
+      3. Verify all 5 sections are present and populated
+      4. Verify report is saved to discussion/retro-sprint-{N}.md
+      5. Verify Level-up phase can extract Proposed Mutations and Proposed Level-ups from it
+    passes: false
+
+  # S1: Sprint Cycle (Convergence)
+  - id: C12
+    section: S1
+    phase: 3
+    task: "3.7"
+    description: "Growth gate allows termination when retro produces no actionable findings for 2 consecutive sprints (D6)"
+    acceptance_criteria: "Growth gate passes when: (a) at least 1 ADD/SUPERSEDE exists in spec-mutations.log, OR (b) last 2 retro reports have empty Proposed Mutations AND empty Proposed Level-ups sections."
+    test_type: manual
+    test_plan: |
+      1. Set up with no mutations in log but 2 consecutive empty retro proposals
+      2. Run growth gate check — verify PASS
+      3. Set up with no mutations and only 1 empty retro
+      4. Run growth gate check — verify FAIL
+    passes: false
+
+  # S4: Knowledge & Parallelism
+  - id: C13
+    section: S4
+    phase: 3
+    task: "3.2"
+    description: "JIT knowledge gathering fetches current library docs before implementing tasks"
+    acceptance_criteria: "During Brief phase, for each task referencing external libraries, context7 resolve-library-id and query-docs are called. Results compiled into JIT context bundle passed to builder agents."
+    test_type: manual
+    test_plan: |
+      1. Create plan with tasks referencing specific libraries (e.g., drizzle-orm, react-query)
+      2. Run Brief phase
+      3. Verify context7 tool calls were made for each library
+      4. Verify JIT context bundle was passed to builder agents
+    passes: false
+
+  - id: C14
+    section: S4
+    phase: 3
+    task: "3.2"
+    description: "Researcher pre-flight runs before Sprint 1 with comprehensive brownfield detection"
+    acceptance_criteria: "On Sprint 1, Brief phase dispatches Researcher agent for brownfield scan: tech stack, build commands, conventions, existing .claude/ files, CI/CD, git history. Results written to research/brownfield-scan.md."
+    test_type: manual
+    test_plan: |
+      1. Start /robro:build on Sprint 1
+      2. Verify Researcher agent is dispatched with brownfield scan instructions
+      3. Verify research/brownfield-scan.md is created with tech stack, build commands, conventions
+      4. Start Sprint 2 — verify pre-flight does NOT run again
+    passes: false
+
+  - id: C15
+    section: S4
+    phase: 3
+    task: "3.3"
+    description: "Agent-mediated merge conflict resolution with sequential fallback"
+    acceptance_criteria: "When merging worktree branches produces conflicts, conflict-resolver agent is dispatched. If it returns BLOCKED, the build skill aborts merge and re-executes the task sequentially."
+    test_type: manual
+    test_plan: |
+      1. Create two tasks that modify the same file in different ways
+      2. Execute in parallel via worktrees
+      3. Verify merge conflict triggers conflict-resolver agent
+      4. Verify post-resolution mechanical check runs
+      5. Simulate BLOCKED status — verify sequential fallback executes
+    passes: false
+
+  # S4: Knowledge & Parallelism
+  - id: C16
+    section: S4
+    phase: 3
+    task: "3.2"
+    description: "Existing project agents, skills, and CLAUDE.md rules are read during Brief and injected into builder context"
+    acceptance_criteria: "Brief phase scans target project .claude/ directory for agents, skills, and rules. Found content is included in the JIT context bundle passed to builder agents."
+    test_type: manual
+    test_plan: |
+      1. Create sample .claude/agents/test-agent.md and .claude/CLAUDE.md in target project
+      2. Run Brief phase
+      3. Verify these files were read
+      4. Verify their content appears in builder agent context
+    passes: false
+
+  # S3: Self-Evolution
+  - id: C17
+    section: S3
+    phase: 3
+    task: "3.6"
+    description: "Created/updated files persist in target project's .claude/ directory"
+    acceptance_criteria: "Level-up writes agents to {PROJECT_ROOT}/.claude/agents/, skills to {PROJECT_ROOT}/.claude/skills/, rules to {PROJECT_ROOT}/CLAUDE.md or {PROJECT_ROOT}/.claude/CLAUDE.md. Files are usable by any Claude Code session."
+    test_type: manual
+    test_plan: |
+      1. Run level-up with proposed agent and rule
+      2. Verify files created in target project .claude/ directory (not robro's directory)
+      3. Verify files have valid Claude Code plugin format
+      4. Start a new Claude Code session — verify files are recognized
+    passes: false
+
+  - id: C18
+    section: S3
+    phase: 3
+    task: "3.6"
+    description: "Level-up quality gate validates against Claude Code conventions and checks naming conflicts (D7)"
+    acceptance_criteria: "After creating/updating a file, level-up validates: frontmatter format, required fields, no naming conflicts with existing files or built-in commands. Failed validation triggers revert."
+    test_type: manual
+    test_plan: |
+      1. Simulate level-up that creates an agent with invalid frontmatter
+      2. Verify quality gate catches the invalid format
+      3. Verify the file is reverted (not left in broken state)
+      4. Simulate naming conflict — verify it's detected and prevented
+    passes: false
+
+  - id: C19
+    section: S1
+    phase: 3
+    task: "3.5"
+    description: "Retro trend analysis compares error rates across sprints (Sprint 2+)"
+    acceptance_criteria: "When previous retro reports exist, retro-analyst compares: error rates, effectiveness of previous level-ups, persistent knowledge gaps, oscillation patterns."
+    test_type: manual
+    test_plan: |
+      1. Seed discussion/ with retro-sprint-1.md and retro-sprint-2.md
+      2. Run retro for sprint 3
+      3. Verify trend analysis section references data from previous reports
+      4. Verify error rate comparison is present
+    passes: false
+
+  - id: C20
+    section: S3
+    phase: 3
+    task: "3.6"
+    description: "Level-up rollback manifest maintained at discussion/levelup-manifest.yaml (D7)"
+    acceptance_criteria: "Every level-up action (CREATE/UPDATE) is recorded in discussion/levelup-manifest.yaml with sprint number, action type, file type, path, description, and timestamp."
+    test_type: manual
+    test_plan: |
+      1. Run level-up that creates 2 files
+      2. Read discussion/levelup-manifest.yaml
+      3. Verify 2 entries with correct fields (action, type, path, description, timestamp)
+      4. Run another sprint's level-up — verify entries appended under sprint key
+    passes: false
+
+  # S5: Auto-Continue & Circuit Breakers
+  - id: C21
+    section: S5
+    phase: 4
+    task: "4.1"
+    description: "Stop hook auto-continues build execution by blocking stop and injecting continuation prompt"
+    acceptance_criteria: "When build is active (status.yaml has skill:build), stop hook returns {decision:block, reason:...}. The reason contains sprint number, phase, spec progress, and next action."
+    test_type: manual
+    test_plan: |
+      1. Create status.yaml with skill:build, sprint:2, phase:heads-down
+      2. Pipe mock Stop hook input (JSON with stop_hook_active:false) to stop-hook.sh
+      3. Verify output is valid JSON with decision:block
+      4. Verify reason contains sprint and phase info
+      5. Remove status.yaml — verify hook exits 0 (allows stop)
+    passes: false
+
+  - id: C22
+    section: S5
+    phase: 4
+    task: "4.1, 4.2"
+    description: "Circuit breakers prevent runaway execution: max 50 reinforcements, rate limit, context pressure, sprint cap"
+    acceptance_criteria: "Stop hook allows stop when: counter >= 50, rate limit errors in .recent-errors.json, stop_hook_active=true AND counter >= 30 (proxy for context >95%), sprint >= 30."
+    test_type: manual
+    test_plan: |
+      1. Set counter file to 49 — verify hook blocks. Set to 50 — verify hook allows stop.
+      2. Write rate limit error to .recent-errors.json — verify hook allows stop.
+      3. Set stop_hook_active:true and counter:30 — verify hook allows stop.
+      4. Set sprint:30 in status.yaml — verify hook allows stop.
+    passes: false
+
+  # S6: Infrastructure & Integration
+  - id: C23
+    section: S6
+    phase: 1
+    task: "1.4, 1.5"
+    description: "Status.yaml at plan root tracks full lifecycle, all hooks read it correctly via dual-path"
+    acceptance_criteria: "session-start.sh and pipeline-guard.sh search both {plan_dir}/status.yaml and {plan_dir}/discussion/status.yaml. The most recently modified one wins. Build writes to plan root, idea/spec write to discussion/."
+    test_type: manual
+    test_plan: |
+      1. Create status.yaml at plan root with skill:build — verify session-start detects it
+      2. Create status.yaml in discussion/ with skill:spec — verify session-start detects it
+      3. Create both — verify the most recently modified one wins
+      4. Run pipeline-guard with build status — verify build case activates
+    passes: false
+
+  - id: C24
+    section: S6
+    phase: 1
+    task: "1.4"
+    description: "Cross-session resume reconstructs build state from status.yaml + spec.yaml + build-progress.md"
+    acceptance_criteria: "session-start.sh for build case reads: sprint number, phase from status.yaml; passes count from spec.yaml; latest learning from build-progress.md. Outputs resume guidance."
+    test_type: manual
+    test_plan: |
+      1. Create status.yaml with sprint:3, phase:review
+      2. Create spec.yaml with 5 passes:true and 3 passes:false
+      3. Create build-progress.md with sprint entries
+      4. Source session-start.sh output — verify it contains sprint 3, review phase, 5/8 passing
+    passes: false
+
+  - id: C25
+    section: S6
+    phase: 1
+    task: "1.1"
+    description: "status.yaml at plan root is gitignored"
+    acceptance_criteria: "docs/plans/*/status.yaml is in .gitignore. Creating a status.yaml file at plan root does not show in git status."
+    test_type: manual
+    test_plan: |
+      1. Update .gitignore with docs/plans/*/status.yaml rule
+      2. Create docs/plans/260312_execution-harness/status.yaml
+      3. Run git status — verify the file does not appear
+      4. Clean up the test file
+    passes: false
+
+  - id: C26
+    section: S6
+    phase: 1
+    task: "1.1"
+    description: "spec-mutations.log at plan root is committed (not gitignored)"
+    acceptance_criteria: "spec-mutations.log files are NOT in .gitignore. Creating a spec-mutations.log at plan root shows as untracked in git status."
+    test_type: manual
+    test_plan: |
+      1. Verify .gitignore does NOT contain spec-mutations.log rule
+      2. Create docs/plans/260312_execution-harness/spec-mutations.log
+      3. Run git status — verify the file appears as untracked
+      4. Clean up the test file
+    passes: false
+
+  - id: C27
+    section: S6
+    phase: 1
+    task: "1.2"
+    description: "CLAUDE.md documents build skill, pipeline flow, spec mutation rules, and new agents"
+    acceptance_criteria: "CLAUDE.md contains: updated pipeline flow with /robro:build, build skill in Core Skills, builder/reviewer/retro-analyst/conflict-resolver in agents, spec mutation rules section."
+    test_type: manual
+    test_plan: |
+      1. Read CLAUDE.md
+      2. Verify pipeline flow shows /robro:build as final step
+      3. Verify Core Skills section includes build skill description
+      4. Verify Directory Structure includes 4 new agents and build skill files
+      5. Verify Spec Mutation Rules section exists with ADD/SUPERSEDE/FLIP documentation
+    passes: false
+
+  - id: C28
+    section: S6
+    phase: 1
+    task: "1.3"
+    description: ".claude/CLAUDE.md updated with build phase rules, agents, and hook events"
+    acceptance_criteria: ".claude/CLAUDE.md contains: Stop and PostToolUseFailure in Active Hooks table, build-specific iteration policy, Build Phase Agents section listing all 4 new agents."
+    test_type: manual
+    test_plan: |
+      1. Read .claude/CLAUDE.md
+      2. Verify Active Hooks table includes stop-hook.sh and error-tracker.sh
+      3. Verify Iteration Policy includes build-specific section
+      4. Verify Build Phase Agents section lists builder, reviewer, retro-analyst, conflict-resolver
+    passes: false
+
+  - id: C29
+    section: S6
+    phase: 5
+    task: "5.1, 5.2, 5.3"
+    description: "All existing hooks work with build phase: pipeline-guard, session-start, spec-gate, keyword-detector, drift-monitor, pre-compact"
+    acceptance_criteria: "pipeline-guard.sh has build case with phase-specific guidance. session-start.sh has build case with sprint state. spec-gate.sh validates against task during build. keyword-detector.sh suggests /robro:build. drift-monitor.sh shows sprint context. pre-compact.sh has build case."
+    test_type: manual
+    test_plan: |
+      1. Set status.yaml to skill:build, phase:heads-down
+      2. Test pipeline-guard — verify build-specific action output
+      3. Test session-start — verify build resume guidance
+      4. Test spec-gate with source file edit — verify task scope message
+      5. Test keyword-detector with "implement" — verify /robro:build suggestion
+      6. Test drift-monitor with source file edit — verify sprint context
+      7. Test pre-compact — verify build-specific persistence guidance
+    passes: false
+
+  - id: C30
+    section: S6
+    phase: 6
+    task: "6.1"
+    description: "Plugin loads successfully with all new components via claude --plugin-dir ."
+    acceptance_criteria: "Running claude --plugin-dir . --debug shows no errors for: skills/build/SKILL.md, all 4 new agents, hooks.json with 7 event types, all scripts executable."
+    test_type: manual
+    test_plan: |
+      1. Run claude --plugin-dir . --debug
+      2. Verify no errors related to new skills, agents, or hooks
+      3. Verify /robro:build appears in available skills
+      4. Verify all 4 new agents appear in available agents
+    passes: false
+
+  - id: C31
+    section: S6
+    phase: 3
+    task: "3.2, 3.5"
+    description: "build-progress.md is created during Brief, appended to during each phase, follows append-only format"
+    acceptance_criteria: "Brief phase creates discussion/build-progress.md with sprint header. Each subsequent phase appends entries. File is never overwritten — only appended. Entries include timestamp, phase, and description."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:build through Brief — verify discussion/build-progress.md is created with sprint header
+      2. Continue through Heads-down — verify new entries are appended (not overwritten)
+      3. Verify each entry has timestamp, phase label, and description
+      4. Check file line count increases monotonically across phases
+    passes: false

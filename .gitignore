@@ -3,3 +3,6 @@ docs/plans/*/research/
 docs/plans/*/discussion/
 docs/plans/*.bak.md
 docs/plans/*.bak.yaml
+
+# Status.yaml is gitignored (temporal execution state)
+docs/plans/*/status.yaml

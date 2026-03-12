@@ -56,6 +56,17 @@ if [ -n "$matched_spec" ]; then
   if [ "$incomplete" -gt 0 ]; then
     echo "Active spec: ${plan_name}/spec.yaml (${incomplete}/${total} items remaining). Validate changes against checklist items and flip passes to true when verified."
   fi
+
+  # During active build, show current task context
+  status_candidate="${plan_dir}/status.yaml"
+  if [ -f "$status_candidate" ]; then
+    build_skill=$(grep "^skill:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
+    if [ "$build_skill" = "build" ]; then
+      sprint=$(grep "^sprint:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
+      phase=$(grep "^phase:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
+      echo "Build sprint ${sprint}, ${phase} phase."
+    fi
+  fi
 fi
 
 exit 0

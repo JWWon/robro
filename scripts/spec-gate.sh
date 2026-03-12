@@ -46,4 +46,22 @@ if [ "$has_spec" = false ]; then
   fi
 fi
 
+# During active build, validate that file edits are within scope of current task
+if [ "$has_spec" = true ]; then
+  # Check if build is active
+  for dir in docs/plans/*/; do
+    [ -d "$dir" ] || continue
+    status_candidate="${dir}status.yaml"
+    [ -f "$status_candidate" ] || continue
+    build_skill=$(grep "^skill:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
+    if [ "$build_skill" = "build" ]; then
+      phase=$(grep "^phase:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
+      if [ "$phase" = "heads-down" ]; then
+        echo "Build active (Heads-down phase). Ensure this edit is within the scope of the current task."
+      fi
+      break
+    fi
+  done
+fi
+
 exit 0

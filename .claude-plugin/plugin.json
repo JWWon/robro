@@ -5,6 +5,6 @@
   "author": {
     "name": "JWWon"
   },
-  "keywords": ["planning", "spec", "requirements", "idea"],
+  "keywords": ["planning", "spec", "requirements", "idea", "build", "implementation"],
   "hooks": "./hooks/hooks.json"
 }

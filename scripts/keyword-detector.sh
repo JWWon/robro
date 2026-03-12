@@ -32,6 +32,10 @@ case "$PROMPT_LOWER" in
     echo "Suggestion: Use /robro:spec to generate technical spec and implementation plan."
     exit 0
     ;;
+  *"robro build"*|*"robro:build"*)
+    echo "Suggestion: Use /robro:build to start autonomous implementation of the plan."
+    exit 0
+    ;;
 esac
 
 # Tier 2: Natural language triggers for /robro:idea
@@ -115,7 +119,9 @@ impl_patterns=(
 
 for pattern in "${impl_patterns[@]}"; do
   if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
-    if [ "$has_spec" = false ]; then
+    if [ "$has_spec" = true ]; then
+      echo "A spec exists. Consider using /robro:build for structured autonomous implementation."
+    elif [ "$has_spec" = false ]; then
       echo "No spec found in docs/plans/. Consider running /robro:idea then /robro:spec before implementing to ensure clear requirements and a validated plan."
     fi
     exit 0

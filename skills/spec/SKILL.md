@@ -49,7 +49,7 @@ Detect the appropriate mode based on input:
 
 ## Pipeline Status Tracking
 
-At every step transition, update `discussion/status.yaml` with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
+At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
 
 ```yaml
 skill: spec
@@ -65,7 +65,7 @@ Update at every step transition and within review loops (include iteration count
 
 ### Step 1: Read & Internalize Requirements
 
-Initialize `discussion/status.yaml` immediately — hooks depend on this file:
+Initialize `status.yaml` at the plan root immediately — hooks depend on this file:
 ```yaml
 skill: spec
 step: "1"

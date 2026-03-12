@@ -38,7 +38,7 @@ This applies to EVERY project regardless of perceived simplicity. "Simple" proje
 
 ## Pipeline Status Tracking
 
-At every step transition, update `discussion/status.yaml` with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
+At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
 
 ```yaml
 skill: idea
@@ -64,7 +64,7 @@ docs/plans/YYMMDD_{slug}/
 
 Where `{slug}` is a short kebab-case name derived from `$ARGUMENTS` (e.g., `260312_user-auth`).
 
-Initialize `discussion/status.yaml` immediately — hooks depend on this file from the first round:
+Initialize `status.yaml` at the plan root immediately — hooks depend on this file from the first round:
 ```yaml
 skill: idea
 step: "0"

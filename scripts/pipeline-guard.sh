@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # UserPromptSubmit hook: Inject focused "where you are, what to do next" guidance
-# Reads discussion/status.yaml — a lightweight file that skills update at each step.
+# Reads status.yaml at plan root — a lightweight file that skills update at each step.
 # Injects ONE focused instruction, not a rules dump.
 
 INPUT=$(cat)
@@ -13,27 +13,31 @@ echo "$PROMPT_LOWER" | grep -q "^/robro:" && exit 0
 
 PLANS_DIR="docs/plans"
 
-# Find the most recently modified status.yaml
+# Find the most recently modified status.yaml (always at plan root)
 status_file=""
 latest_mtime=0
 
 if [ -d "$PLANS_DIR" ]; then
-  for f in "$PLANS_DIR"/*/discussion/status.yaml; do
-    [ -f "$f" ] || continue
-    if stat -f %m "$f" >/dev/null 2>&1; then
-      mtime=$(stat -f %m "$f")
+  for dir in "$PLANS_DIR"/*/; do
+    [ -d "$dir" ] || continue
+    candidate="${dir}status.yaml"
+    [ -f "$candidate" ] || continue
+    if stat -f %m "$candidate" >/dev/null 2>&1; then
+      mtime=$(stat -f %m "$candidate")
     else
-      mtime=$(stat -c %Y "$f")
+      mtime=$(stat -c %Y "$candidate")
     fi
     if [ "$mtime" -gt "$latest_mtime" ]; then
       latest_mtime=$mtime
-      status_file=$f
+      status_file=$candidate
     fi
   done
 fi
 
 # No active pipeline — exit silently
 [ -z "$status_file" ] && exit 0
+
+plan_dir=$(dirname "$status_file")
 
 # Read status fields
 skill=$(grep "^skill:" "$status_file" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
@@ -84,6 +88,33 @@ case "$skill" in
         ;;
       *)
         echo "Action: Process agent outputs. Route on Status first, then Verdict. Iterate review loop if needed."
+        ;;
+    esac
+    ;;
+  build)
+    sprint=$(grep "^sprint:" "$status_file" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
+    phase=$(grep "^phase:" "$status_file" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
+    case "$phase" in
+      brief)
+        echo "Action: Complete Brief phase — gather context, scan project rules/agents, plan parallel levels, fetch JIT knowledge."
+        ;;
+      heads-down)
+        echo "Action: Execute tasks via builder agents. TDD flow: failing test, implement, verify, commit. Merge worktrees after each level."
+        ;;
+      review)
+        echo "Action: Run 3-stage review — mechanical first (build/lint/test), then semantic, then consensus if needed."
+        ;;
+      retro)
+        echo "Action: Produce structured retro report (Broken Assumptions, Emerged Patterns, Knowledge Gaps, Proposed Mutations, Proposed Level-ups)."
+        ;;
+      level-up)
+        echo "Action: Apply spec mutations, evolve project rules/agents/skills. Search community refs before creating. Log every create/update to build-progress.md."
+        ;;
+      converge)
+        echo "Action: Run 5-gate convergence check + pathology detection. If converged, finalize. If not, persist state for next sprint."
+        ;;
+      *)
+        echo "Action: Continue build execution. Read status.yaml for current phase and next action."
         ;;
     esac
     ;;
