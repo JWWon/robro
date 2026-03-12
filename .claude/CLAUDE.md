@@ -98,10 +98,10 @@ Spec.yaml checklist items during build use restricted mutation: ADD or SUPERSEDE
 ## Build Phase Agents
 
 Four new agents support the build skill:
-- **Builder** (`agents/builder.md`): Executes TDD tasks in worktree isolation. Gets JIT knowledge + project rules context. Uses `isolation: worktree`.
+- **Builder** (`agents/builder.md`): Executes TDD tasks inline or in worktree isolation (determined at dispatch time via `isolation: "worktree"` parameter). Gets JIT knowledge + project rules context.
 - **Reviewer** (`agents/reviewer.md`): Runs 3-stage peer review. Multi-agent consensus (Architect + Critic + Reviewer) replaces multi-model consensus.
 - **Retro Analyst** (`agents/retro-analyst.md`): Produces structured retro report (Broken Assumptions, Emerged Patterns, Knowledge Gaps, Proposed Mutations, Proposed Level-ups).
-- **Conflict Resolver** (`agents/conflict-resolver.md`): Resolves merge conflicts from worktree merges. Understands intent from both sides.
+- **Conflict Resolver** (`agents/conflict-resolver.md`): Resolves merge conflicts from squash merges of worktree-isolated agent dispatches. Understands intent from both sides.
 
 Existing agents reused during build:
 - **Researcher**: Sprint 1 pre-flight, Brief phase context gathering, JIT knowledge
