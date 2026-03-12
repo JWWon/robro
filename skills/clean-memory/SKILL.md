@@ -111,7 +111,78 @@ Found {N} completed plan(s):
 Then proceed to Step 2.
 
 ### Step 2: Cross-Plan Pattern Analysis
-{To be implemented in Task 4.3}
+
+For each completed plan identified in Step 1, read committed data sources and aggregate cross-plan patterns to produce improvement recommendations.
+
+#### 2a. Read Plan Data
+
+For each completed plan:
+
+1. **spec-mutations.log**: Use the **Read** tool to read `{plan_dir}/spec-mutations.log`
+   - Parse the tab-separated (TSV) format: `{timestamp}\t{SPRINT:N}\t{operation}\t{item-path}\t{value}\t{reason}`
+   - Extract operations by type:
+     - **ADD** operations: New items discovered during build. These reveal where the initial spec was incomplete.
+     - **SUPERSEDE** operations: Items that needed replacement. These reveal where the initial spec was wrong or poorly scoped.
+     - **FLIP** operations: Items that passed review. These confirm successful implementation.
+   - If the file does not exist, note "no mutation log available" and skip mutation analysis for this plan.
+
+2. **spec.yaml**: Use the **Read** tool to read `{plan_dir}/spec.yaml`
+   - Extract: section names and IDs, checklist item count per section, pass/fail/superseded counts
+   - Extract: `goal`, `constraints`, `tech_stack` from the metadata for pattern matching
+   - If spec.yaml does not exist, skip this plan entirely with a warning.
+
+#### 2b. Aggregate Patterns Across Plans
+
+**If multiple completed plans exist**, perform cross-plan aggregation:
+
+- **Recurring mutation types**: Which categories of spec items get ADDed or SUPERSEDEd most frequently? This reveals where initial specs tend to be weakest. Group by section name/type (e.g., "Error Handling", "Authentication", "Testing") and count occurrences across plans.
+
+- **Common section patterns**: Which spec section names or types appear across multiple plans? Sections that recur suggest domain areas that should be templated or have dedicated tooling.
+
+- **Build velocity**: For each plan, compute:
+  - Total checklist items (excluding superseded)
+  - Items that passed (FLIP to true)
+  - Items that were superseded
+  - Items added during build (ADD operations)
+  - Average items per sprint (total items / number of sprints from mutation log)
+
+**If only 1 completed plan exists**:
+- Note "Single plan — cross-plan comparison limited"
+- Provide a per-plan summary of mutation types and build velocity instead of cross-plan aggregation
+
+#### 2c. Compare Against Current Project State
+
+Read the current project's configuration to identify gaps:
+
+1. **List agents**: Use **Glob** with pattern `agents/*.md` — read the `description` field from each agent's YAML frontmatter
+2. **List skills**: Use **Glob** with pattern `skills/*/SKILL.md` — read the `description` field from each skill's YAML frontmatter
+3. **Read rules**: Use **Read** to read `CLAUDE.md` and `.claude/CLAUDE.md` for existing project rules and conventions
+
+Compare the aggregated patterns against the current state:
+
+- **Agent gaps**: Are there recurring knowledge gaps that suggest a new agent is needed? For example, if multiple plans had to ADD items about error handling patterns, an error-handling-focused agent might help.
+- **Skill gaps**: Are there recurring procedures that suggest a new skill? For example, if the same multi-step workflow appeared across multiple plans, it could be automated as a skill.
+- **Rule gaps**: Are there recurring constraints or conventions that should become rules in CLAUDE.md? For example, if the same naming convention or architectural pattern was rediscovered in each plan, it should be codified.
+
+#### 2d. Generate Recommendations
+
+For each identified pattern from the cross-plan analysis, produce a structured recommendation:
+
+```
+Recommendation: {what to create or update}
+Type: agent | skill | rule
+Evidence: {which plans exhibited this pattern, which mutations/sections}
+Priority: high | medium | low
+```
+
+Priority is determined by recurrence:
+- **high**: Pattern appeared in 3+ plans, or in all completed plans
+- **medium**: Pattern appeared in 2 plans
+- **low**: Pattern appeared in 1 plan but is significant (e.g., many mutations of the same type)
+
+If no actionable patterns are found (e.g., all plans are clean with minimal mutations), note: "No cross-plan improvement recommendations identified."
+
+Store all recommendations for presentation in Step 3.
 
 ### Step 3: Present Analysis & Recommendations
 {To be implemented in Task 4.4}
