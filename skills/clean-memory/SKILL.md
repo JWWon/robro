@@ -185,7 +185,109 @@ If no actionable patterns are found (e.g., all plans are clean with minimal muta
 Store all recommendations for presentation in Step 3.
 
 ### Step 3: Present Analysis & Recommendations
-{To be implemented in Task 4.4}
+
+Present the cross-plan analysis from Step 2 and apply user-confirmed recommendations.
+
+#### 3a. Display Analysis Summary
+
+Display the cross-plan analysis summary to the user. Include:
+- Recurring mutation types and which sections they affect
+- Common section patterns across plans
+- Build velocity metrics per plan
+- Any identified gaps (agent, skill, or rule)
+
+#### 3b. Present Recommendations
+
+If recommendations were generated in Step 2d, present each one individually via **AskUserQuestion**:
+
+```
+Based on cross-plan analysis, here are improvement recommendations:
+
+1. {recommendation} (Type: {agent | skill | rule}, Priority: {high | medium | low})
+   Evidence: {which plans, which patterns}
+
+Apply this recommendation?
+```
+
+Options for each: "Apply", "Skip", "Discuss further"
+
+- **"Apply"**: Proceed with creating/updating the recommended artifact (see 3c)
+- **"Skip"**: Move to the next recommendation without action
+- **"Discuss further"**: Explain the reasoning in more detail, then re-ask the same question
+
+#### 3c. Apply Confirmed Recommendations
+
+For each recommendation the user chose to apply:
+
+- **Agent**: Create the agent file at `agents/{name}.md` with appropriate YAML frontmatter (`name`, `description`) and a system prompt body describing the agent's role, informed by the cross-plan evidence.
+- **Skill**: Create the skill at `skills/{name}/SKILL.md` with appropriate YAML frontmatter (`name`, `description`, `disable-model-invocation: true`) and a workflow skeleton based on the recurring pattern.
+- **Rule**: Append the rule to `CLAUDE.md` under a new section, or create `.claude/rules/{name}.md` if the rule is project-specific rather than plugin-level.
+
+Log each applied recommendation: `"Applied recommendation: {description} (created {file_path})"`
+
+#### 3d. No Recommendations Case
+
+If no actionable recommendations were identified in Step 2d, inform the user:
+
+`"No cross-plan improvement recommendations identified. Proceeding to plan cleanup."`
+
+Then skip directly to Step 4.
 
 ### Step 4: User Confirmation & Deletion
-{To be implemented in Task 4.4}
+
+Delete completed plans after individual user confirmation. Each plan is presented separately with a clear inventory of what will be preserved and what will be permanently lost.
+
+#### 4a. Per-Plan Confirmation
+
+For each completed plan (from Step 1), present individually via **AskUserQuestion**:
+
+```
+Plan: {plan_name} (detected via {completion_source})
+
+Committed files (preserved in git history):
+  - idea.md
+  - plan.md
+  - spec.yaml
+  - spec-mutations.log (if exists)
+
+Gitignored files (PERMANENTLY DELETED):
+  - research/ (if exists)
+  - discussion/ (if exists)
+  - status.yaml
+  - *.bak.* files (if any)
+
+Delete this plan directory?
+```
+
+Options: "Delete", "Keep", "Delete all remaining"
+
+- **"Delete"**: Confirm deletion of this plan. Proceed to execute deletion (see 4b), then present the next plan.
+- **"Keep"**: Skip this plan entirely — do not delete. Proceed to the next plan.
+- **"Delete all remaining"**: Confirm deletion of this plan AND all remaining plans without further prompts. Execute deletion for the current plan and every subsequent plan in the list.
+
+#### 4b. Execute Deletion
+
+For each plan confirmed for deletion (either individually or via "Delete all remaining"):
+
+1. Use the **Bash** tool to delete the entire plan directory:
+   ```
+   rm -rf docs/plans/{plan_name}/
+   ```
+2. Log the action: `"Deleted docs/plans/{plan_name}/"`
+
+Both committed files and gitignored files are removed from the working directory. Committed files remain accessible in git history.
+
+#### 4c. Report Summary
+
+After all plans have been processed (confirmed or skipped):
+
+1. Report a summary:
+   ```
+   Plan cleanup complete: {N} plans deleted, {M} plans kept
+   ```
+
+2. If any recommendations were applied in Step 3, suggest committing the changes:
+   ```
+   Recommendations were applied during cleanup. Consider committing these changes:
+     - {list of files created/modified in Step 3c}
+   ```
