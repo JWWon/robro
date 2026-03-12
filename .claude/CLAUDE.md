@@ -56,3 +56,50 @@ The body is the agent's system prompt. Agents appear in `/agents` and can be aut
 Available events (case-sensitive): `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Notification`, `Stop`, `SubagentStart`, `SubagentStop`, `SessionStart`, `SessionEnd`, `TeammateIdle`, `TaskCompleted`, `PreCompact`.
 
 Hook types: `command` (shell), `prompt` (LLM eval), `agent` (agentic verifier).
+
+## Agent Dispatch Rules
+
+- Skills orchestrate. Agents execute. Never give an agent user-facing interaction (AskUserQuestion).
+- Always check the agent's **Status** field first (`DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`) before processing output.
+- `NEEDS_CONTEXT` → provide missing info and re-dispatch. `BLOCKED` → fix or escalate to user.
+- Critic verdicts (PASS/ACCEPT_WITH_RESERVATIONS/NEEDS_WORK/REJECT) are separate from status — a REJECT verdict still has status DONE.
+- Challenge agents (contrarian, simplifier, ontologist) are applied as inline lenses first. Only dispatch as subagent for deep investigation.
+
+## Iteration Policy
+
+- No arbitrary iteration caps. Loops exit only on passing verdicts from both Architect and Critic.
+- Every 3 iterations, inform the user of progress and ask: continue, try different approach, or accept with noted concerns.
+- Spec.yaml checklist items are immutable once created — only `passes` can flip `false` → `true`.
+
+## Active Hooks
+
+| Event | Script | Purpose |
+|-------|--------|---------|
+| SessionStart | `session-start.sh` | Detect active pipeline phase, inject state + rules for resume |
+| UserPromptSubmit | `keyword-detector.sh` | Detect idea/spec keywords, suggest skills |
+| UserPromptSubmit | `pipeline-guard.sh` | Re-inject planning workflow rules every prompt (survives compression) |
+| PreToolUse (Write\|Edit) | `spec-gate.sh` | Warn if writing source code without a spec |
+| PostToolUse (Write\|Edit) | `drift-monitor.sh` | Show spec progress when actively implementing |
+| PreCompact | `pre-compact.sh` | Remind agent to persist pipeline state before context compression |
+
+## Hook Design Principle
+
+**Skills get compressed. Hooks don't.** As context grows, Claude compresses older messages — including skill instructions. Hooks fire fresh every time, regardless of context length. Critical planning rules live in hooks so they survive long sessions:
+- `pipeline-guard.sh` reads `discussion/status.yaml` and injects focused state: current step, next action, exit gate
+- `session-start.sh` restores full pipeline state on session resume
+- `pre-compact.sh` ensures state is persisted before compression
+
+**Injection pattern**: "You are HERE, do THIS next" — not a rules dump. The `next` field in status.yaml is written by the skill with full conversation context, so hooks inject precise guidance even after compression.
+
+## Ambiguity Scoring Model
+
+Used by the `idea` and `spec` skills to gate progression:
+
+| Dimension | Weight |
+|-----------|--------|
+| Goal Clarity | 35% |
+| Constraint Clarity | 25% |
+| Success Criteria | 25% |
+| Context Clarity | 15% |
+
+Threshold: `ambiguity ≤ 0.2` to proceed. Formula: `ambiguity = 1 - weighted_sum`.

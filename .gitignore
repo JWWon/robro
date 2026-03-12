@@ -1,0 +1,5 @@
+# Plan artifacts — temporal working files
+docs/plans/*/research/
+docs/plans/*/discussion/
+docs/plans/*.bak.md
+docs/plans/*.bak.yaml
