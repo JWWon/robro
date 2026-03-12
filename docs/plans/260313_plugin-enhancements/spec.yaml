@@ -1,0 +1,330 @@
+meta:
+  id: "260313_plugin-enhancements"
+  idea: idea.md
+  plan: plan.md
+  created: "2026-03-13T00:00:00Z"
+  updated: "2026-03-13T00:00:00Z"
+  ambiguity_score: 0.13
+
+goal: "Enhance the robro plugin with project-level setup automation, completed plan cleanup, open-source packaging, and a stricter ambiguity quality gate."
+
+constraints:
+  - "Both setup and clean-memory use skills/<name>/SKILL.md with disable-model-invocation: true"
+  - "Setup CLAUDE.md section uses <!-- robro:managed:start/end --> delimiters for idempotent updates"
+  - "MCP detection reads ~/.claude.json and .mcp.json, NOT .claude/settings.json"
+  - "MCP installation uses claude mcp add --scope project CLI, not direct file writes"
+  - "The 4 recommended MCPs/skills are a fixed list maintained in the skill file"
+  - "Threshold changes must not affect existing completed plans (scores 0.08-0.09)"
+  - "Clean-memory checks both plan-root and discussion/ status.yaml locations"
+  - "Cross-plan analysis reads only committed data sources (spec-mutations.log, spec.yaml)"
+  - "Plugin version stays at 0.1.0 for initial open-source release"
+
+non_goals:
+  - "Full project CLAUDE.md generation — robro manages only its own delimited section"
+  - "Plan archiving — entire directories are deleted; git preserves history"
+  - "Per-plan re-analysis in clean-memory — the build retro phase already handles that"
+  - "README replacing or consolidating root CLAUDE.md — separate files for separate audiences"
+
+context:
+  type: "brownfield"
+  tech_stack:
+    - "Claude Code plugin system (skills, agents, hooks)"
+    - "Shell scripts (bash) for hooks"
+    - "YAML (status.yaml, spec.yaml)"
+    - "JSON (plugin.json, hooks.json, .mcp.json)"
+    - "Markdown (SKILL.md, agents, CLAUDE.md)"
+  existing_patterns:
+    - "Skills use skills/<name>/SKILL.md with YAML frontmatter"
+    - "Supporting files alongside SKILL.md (build has 6 phase files)"
+    - "Status.yaml at plan root drives hook injection"
+    - "MCP servers configured in ~/.claude.json and .mcp.json"
+    - "Hooks fire on events: SessionStart, UserPromptSubmit, PreToolUse, etc."
+  key_files:
+    - "skills/idea/SKILL.md"
+    - "skills/spec/SKILL.md"
+    - "skills/build/SKILL.md"
+    - "agents/critic.md"
+    - "agents/ontologist.md"
+    - "CLAUDE.md"
+    - ".claude/CLAUDE.md"
+    - ".claude-plugin/plugin.json"
+    - "hooks/hooks.json"
+    - "scripts/session-start.sh"
+
+architecture_decisions:
+  - decision: "MCP detection via ~/.claude.json + .mcp.json file reads"
+    rationale: "Researcher confirmed MCPs stored here, not in settings.json"
+    alternatives: ["claude mcp list CLI (stable but needs stdout parsing)"]
+  - decision: "Use claude mcp add --scope project for MCP install"
+    rationale: "Official CLI API; writes .mcp.json correctly"
+    alternatives: ["Direct .mcp.json file write (risks format errors)"]
+  - decision: "Section delimiters: <!-- robro:managed:start/end -->"
+    rationale: "HTML comments invisible in rendered markdown, unique enough to avoid collisions"
+    alternatives: ["Markdown heading", "YAML markers"]
+  - decision: "Clean-memory checks both status.yaml locations"
+    rationale: "Completed plan 260312 has status.yaml in discussion/, not plan root"
+    alternatives: ["Migration step", "Heuristic (all spec passes = completed)"]
+  - decision: "Cross-plan reads: spec-mutations.log + spec.yaml only"
+    rationale: "Committed, structured data sources. discussion/ is gitignored"
+    alternatives: ["Read all artifacts"]
+  - decision: "Fix reference plugin URLs in CLAUDE.md + README"
+    rationale: "All 3 wrong: oh-my-claudecode→Yeachan-Heo, ouroboros→Q00, superpowers→obra"
+    alternatives: ["Keep as-is"]
+
+sections:
+  - id: S1
+    name: "Setup Skill"
+    description: "Project-level robro configuration: CLAUDE.md section management, MCP/skill checklist, .gitignore"
+    requirements:
+      - "Section-managed robro block in .claude/CLAUDE.md with delimited markers"
+      - "Detect existing MCP/skill configurations and present checklist of missing items"
+      - "Configure .gitignore with robro plan temporal artifact rules"
+      - "Idempotent re-run — no duplicates, no unnecessary changes"
+
+  - id: S2
+    name: "Clean-Memory Skill"
+    description: "Completed plan cleanup with cross-plan pattern analysis and user-confirmed deletion"
+    requirements:
+      - "Identify completed plans via dual-path status.yaml detection"
+      - "Cross-plan pattern analysis using spec-mutations.log and spec.yaml"
+      - "User confirmation per plan before deletion"
+      - "Delete entire plan directory"
+
+  - id: S3
+    name: "Open Source Packaging"
+    description: "README.md, MIT LICENSE, and plugin.json metadata for open-source distribution"
+    requirements:
+      - "README with installation, pipeline overview, and credits"
+      - "MIT LICENSE file"
+      - "plugin.json with license, repository, homepage fields"
+
+  - id: S4
+    name: "Ambiguity Threshold"
+    description: "Tighten ambiguity gate from 0.2 to 0.1 and adjust ontologist activation from 0.3 to 0.2"
+    requirements:
+      - "Update all ambiguity threshold references from 0.2 to 0.1"
+      - "Update ontologist activation threshold from 0.3 to 0.2"
+
+  - id: S5
+    name: "Attribution Fixes"
+    description: "Correct reference plugin repository URLs in documentation"
+    requirements:
+      - "Fix oh-my-claudecode, ouroboros, and superpowers GitHub URLs"
+
+checklist:
+  - id: C1
+    section: S1
+    phase: 3
+    task: "3.1, 3.2, 3.3"
+    description: "Setup creates/updates robro section in .claude/CLAUDE.md"
+    acceptance_criteria: "Running /robro:setup on a fresh project creates .claude/CLAUDE.md with content between <!-- robro:managed:start --> and <!-- robro:managed:end --> markers. On an existing file, only the robro section is updated."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:setup in a project with no .claude/CLAUDE.md
+      2. Verify .claude/CLAUDE.md exists with robro:managed markers and pipeline content
+      3. Run /robro:setup in a project with existing .claude/CLAUDE.md (no robro section)
+      4. Verify robro section appended, existing content untouched
+      5. Run /robro:setup again — verify no changes made (idempotent)
+    passes: false
+
+  - id: C2
+    section: S1
+    phase: 3
+    task: "3.3"
+    description: "Setup CLAUDE.md management is idempotent"
+    acceptance_criteria: "Re-running /robro:setup produces no file changes when the robro section is already current. No duplicate markers or content."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:setup to create initial robro section
+      2. Run /robro:setup again immediately
+      3. Diff .claude/CLAUDE.md before and after — should be identical
+      4. Verify no duplicate <!-- robro:managed:start --> markers exist
+    passes: false
+
+  - id: C3
+    section: S1
+    phase: 3
+    task: "3.4"
+    description: "Setup presents MCP/skill checklist with detection"
+    acceptance_criteria: "Setup reads ~/.claude.json and .mcp.json to detect installed MCPs, checks .claude/rules/ for git-related rules, checks .claude/skills/ for agent-browser. Presents checklist of missing items via AskUserQuestion. Only installs user-confirmed items."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:setup in a project with no .mcp.json and no .claude/rules/
+      2. Verify all 4 items appear in checklist as unconfigured
+      3. Confirm only 2 items (e.g., context7, grep)
+      4. Verify only those 2 are installed (claude mcp add commands executed)
+      5. Run /robro:setup again — verify context7 and grep now show as configured
+    passes: false
+
+  - id: C4
+    section: S1
+    phase: 3
+    task: "3.5"
+    description: "Setup configures .gitignore with robro rules"
+    acceptance_criteria: ".gitignore contains all 5 robro plan temporal artifact rules (research/, discussion/, status.yaml, *.bak.md, *.bak.yaml). Rules are not duplicated on re-run."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:setup in a project with no .gitignore
+      2. Verify .gitignore created with all 5 rules under '# Robro plan artifacts' header
+      3. Run /robro:setup in a project with existing .gitignore (partial rules)
+      4. Verify only missing rules appended, no duplicates
+      5. Run again — verify no changes (idempotent)
+    passes: false
+
+  - id: C5
+    section: S1
+    phase: 3
+    task: "3.3, 3.4, 3.5"
+    description: "Setup is fully idempotent across all operations"
+    acceptance_criteria: "Running /robro:setup twice in succession produces identical project state. No duplicate CLAUDE.md sections, no duplicate .gitignore rules, no re-installation of already-configured MCPs."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:setup on a fresh project, confirm all items
+      2. Snapshot file state (md5sum .claude/CLAUDE.md .gitignore .mcp.json)
+      3. Run /robro:setup again
+      4. Verify file checksums unchanged
+      5. Verify no MCP install commands were executed on second run
+    passes: false
+
+  - id: C6
+    section: S2
+    phase: 4
+    task: "4.1, 4.2"
+    description: "Clean-memory detects completed plans via dual-path status.yaml"
+    acceptance_criteria: "Identifies plans where status.yaml has skill: none. Checks both {plan_dir}/status.yaml (plan root) and {plan_dir}/discussion/status.yaml (legacy). Falls back to spec.yaml heuristic when no status.yaml exists."
+    test_type: manual
+    test_plan: |
+      1. Create test plans: one with plan-root status.yaml (skill: none), one with discussion/status.yaml (skill: none), one with spec.yaml (all passes: true, no status.yaml)
+      2. Run /robro:clean-memory
+      3. Verify all 3 plans are detected as completed
+      4. Verify a plan with status.yaml (skill: idea) is NOT listed
+    passes: false
+
+  - id: C7
+    section: S2
+    phase: 4
+    task: "4.3"
+    description: "Clean-memory performs cross-plan pattern analysis"
+    acceptance_criteria: "Reads spec-mutations.log and spec.yaml from each completed plan. Aggregates recurring mutation types, common section patterns, and build velocity. Compares against current agents/skills/rules. Produces improvement recommendations."
+    test_type: manual
+    test_plan: |
+      1. Ensure at least 1 completed plan with spec-mutations.log and spec.yaml exists
+      2. Run /robro:clean-memory
+      3. Verify cross-plan analysis output is displayed before deletion prompts
+      4. Verify recommendations reference specific patterns from the data
+      5. Verify single-plan case shows per-plan summary instead of cross-plan comparison
+    passes: false
+
+  - id: C8
+    section: S2
+    phase: 4
+    task: "4.4"
+    description: "Clean-memory requires user confirmation per plan"
+    acceptance_criteria: "Each completed plan is presented individually with list of committed files (preserved in git) and gitignored files (PERMANENTLY DELETED). User must confirm before deletion."
+    test_type: manual
+    test_plan: |
+      1. Run /robro:clean-memory with 2+ completed plans
+      2. Verify each plan presented individually via AskUserQuestion
+      3. Verify permanent deletion warning lists specific gitignored files
+      4. Confirm one plan, skip another
+      5. Verify only confirmed plan directory was deleted
+    passes: false
+
+  - id: C9
+    section: S2
+    phase: 4
+    task: "4.4"
+    description: "Clean-memory deletes entire plan directory"
+    acceptance_criteria: "After user confirmation, the entire docs/plans/YYMMDD_name/ directory is removed. Both committed and gitignored files are deleted."
+    test_type: manual
+    test_plan: |
+      1. Confirm a plan for deletion via /robro:clean-memory
+      2. Verify the directory no longer exists: ls docs/plans/YYMMDD_name/ returns error
+      3. Verify git log still shows the committed files in history
+    passes: false
+
+  - id: C10
+    section: S3
+    phase: 2
+    task: "2.3"
+    description: "README.md present with required sections"
+    acceptance_criteria: "README.md exists at repo root with sections: what robro is, installation, pipeline overview, skills list, credits (oh-my-claudecode, ouroboros, superpowers with correct GitHub URLs), and license."
+    test_type: manual
+    test_plan: |
+      1. Verify README.md exists at repo root
+      2. Verify contains sections: installation, pipeline overview, credits, license
+      3. Verify credits link to Yeachan-Heo/oh-my-claudecode, Q00/ouroboros, obra/superpowers
+      4. Verify pipeline diagram shows idea → spec → build flow
+    passes: false
+
+  - id: C11
+    section: S3
+    phase: 2
+    task: "2.1"
+    description: "MIT LICENSE file present"
+    acceptance_criteria: "LICENSE file exists at repo root containing standard MIT license text with copyright holder JWWon."
+    test_type: manual
+    test_plan: |
+      1. Verify LICENSE file exists at repo root
+      2. Verify first line is 'MIT License'
+      3. Verify contains 'JWWon' as copyright holder
+    passes: false
+
+  - id: C12
+    section: S3
+    phase: 2
+    task: "2.2"
+    description: "plugin.json has license, repository, homepage fields"
+    acceptance_criteria: "plugin.json contains license: 'MIT', repository: 'https://github.com/JWWon/robro', homepage: 'https://github.com/JWWon/robro'. JSON is valid."
+    test_type: unit
+    test_plan: |
+      1. Read .claude-plugin/plugin.json
+      2. Verify JSON is valid (python3 -c 'import json; json.load(open(...))')
+      3. Assert license == 'MIT'
+      4. Assert repository contains 'github.com/JWWon/robro'
+      5. Assert homepage contains 'github.com/JWWon/robro'
+    passes: false
+
+  - id: C13
+    section: S4
+    phase: 1
+    task: "1.1"
+    description: "Ambiguity threshold updated from 0.2 to 0.1"
+    acceptance_criteria: "All threshold references in skills/idea/SKILL.md (5), agents/critic.md (4), CLAUDE.md (2), .claude/CLAUDE.md (1) updated from 0.2 to 0.1. Formula weights (0.25, 0.35) unchanged."
+    test_type: unit
+    test_plan: |
+      1. Grep for threshold pattern in all 4 files: grep -n '≤ 0\.2\|> 0\.2' skills/idea/SKILL.md agents/critic.md CLAUDE.md .claude/CLAUDE.md
+      2. Verify zero matches (all changed to 0.1)
+      3. Grep for formula weights: verify 0.25 and 0.35 still present in skills/idea/SKILL.md
+      4. Verify 0.1 threshold appears in expected locations
+    passes: false
+
+  - id: C14
+    section: S4
+    phase: 1
+    task: "1.2"
+    description: "Ontologist activation threshold updated from 0.3 to 0.2"
+    acceptance_criteria: "skills/idea/SKILL.md line 260 changed from 'ambiguity > 0.3' to 'ambiguity > 0.2'. agents/ontologist.md description changed from '>0.3' to '>0.2'. Example value changed from 0.35 to 0.25."
+    test_type: unit
+    test_plan: |
+      1. Grep: grep -n 'ambiguity.*0\.3\|>0\.3' skills/idea/SKILL.md agents/ontologist.md
+      2. Verify zero matches
+      3. Verify 'ambiguity > 0.2' appears in skills/idea/SKILL.md
+      4. Verify '>0.2' appears in agents/ontologist.md description
+      5. Verify example value 'ambiguity: 0.25' in skills/idea/SKILL.md status.yaml block
+    passes: false
+
+  - id: C15
+    section: S5
+    phase: 1
+    task: "1.3"
+    description: "Reference plugin URLs corrected"
+    acceptance_criteria: "Root CLAUDE.md uses correct URLs: Yeachan-Heo/oh-my-claudecode, Q00/ouroboros, obra/superpowers. No references to nicobailon, dnakov, or anthropics/claude-code-superpowers remain."
+    test_type: unit
+    test_plan: |
+      1. Grep: grep -n 'nicobailon\|dnakov\|anthropics/claude-code-superpowers' CLAUDE.md
+      2. Verify zero matches
+      3. Verify 'Yeachan-Heo/oh-my-claudecode' appears in CLAUDE.md
+      4. Verify 'Q00/ouroboros' appears in CLAUDE.md
+      5. Verify 'obra/superpowers' appears in CLAUDE.md
+    passes: false
