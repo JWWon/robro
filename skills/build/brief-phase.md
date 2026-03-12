@@ -21,6 +21,23 @@ detail: "Reading current state"
 next: "Identify remaining items and plan sprint scope"
 ```
 
+### 1.5. Clean Stale Worktrees
+
+Remove any worktrees and branches left over from previous sprints or crashed sessions:
+
+```bash
+# List and remove stale agent worktrees
+for wt in $(git worktree list --porcelain | grep 'worktree.*\.claude/worktrees/agent-' | sed 's/worktree //'); do
+  git worktree remove --force "$wt" 2>/dev/null
+done
+git worktree prune
+
+# Delete orphaned worktree branches
+git branch -l 'worktree-agent-*' | xargs -r git branch -D 2>/dev/null
+```
+
+Log removals to build-progress.md.
+
 ### 2. Sprint 1 Only: Researcher Pre-flight
 
 On the very first sprint, dispatch the **Researcher** agent for comprehensive brownfield detection:
@@ -76,8 +93,11 @@ Analyze the File Map from the Brief and task dependencies:
 
 1. Group tasks that have no dependencies between each other into "levels"
 2. **Critical — file overlap detection (D9)**: For tasks in the same level, check if they modify the same files. If they do, serialize them (move one to the next level).
-3. Cap each level at 3-4 concurrent tasks (max worktrees)
-4. Record the level plan in build-progress.md
+3. **Classify execution path** for each level:
+   - **Inline**: All tasks reference the same plan.md section, each task touches ≤3 files, AND no file overlaps between tasks in the level.
+   - **Isolated**: Tasks have file overlaps between them, OR any single task touches >3 files.
+   - **Teams**: Tasks span 3+ different plan.md sections or fundamentally different subsystems.
+4. Record the level plan with execution path in build-progress.md
 
 Example level structure:
 ```
