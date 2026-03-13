@@ -227,7 +227,7 @@ checklist:
       3. Verify it contains: EnterWorktree(name: "{slug}")
       4. Verify it contains: git branch -m plan/{slug}
       5. Verify it contains file copy and main cleanup steps
-    passes: false
+    passes: true
 
   - id: C6
     section: S2
@@ -239,7 +239,7 @@ checklist:
     test_plan: |
       1. Run: grep 'worktrees' .gitignore
       2. Expected: line showing .claude/worktrees/ or worktrees/ pattern
-    passes: false
+    passes: true
 
   - id: C7
     section: S7
@@ -255,7 +255,7 @@ checklist:
       4. Verify it outputs resume guidance with EnterWorktree suggestion
       5. Run: bash -n scripts/session-start.sh (syntax check)
       6. Expected: exit code 0
-    passes: false
+    passes: true
 
   - id: C8
     section: S10
@@ -269,7 +269,7 @@ checklist:
       2. Verify "Convergence Reached" section contains AskUserQuestion
       3. Verify three options: Merge, Keep, Discard
       4. Verify merge summary includes: sprints, spec items, branch, commit count
-    passes: false
+    passes: true
 
   - id: C9
     section: S9
@@ -285,7 +285,7 @@ checklist:
       4. Verify: git commit with descriptive message
       5. Verify: git worktree remove .claude/worktrees/{slug}
       6. Verify: git branch -D plan/{slug}
-    passes: false
+    passes: true
 
   - id: C10
     section: S4
@@ -298,7 +298,7 @@ checklist:
       1. Run: python3 -c "import yaml; d=yaml.safe_load(open('model-config.yaml')); assert set(d['tiers'].keys()) == {'light','standard','complex'}; print('PASS')"
       2. Expected: PASS
       3. Verify researcher and retro-analyst are never 'opus' in any tier
-    passes: false
+    passes: true
 
   - id: C11
     section: S4
@@ -312,7 +312,7 @@ checklist:
       2. Verify: only haiku or sonnet values
       3. Run: grep -A1 'retro-analyst:' model-config.yaml
       4. Verify: only haiku or sonnet values
-    passes: false
+    passes: true
 
   - id: C12
     section: S5
@@ -326,7 +326,7 @@ checklist:
       2. Find spec.yaml template section
       3. Verify meta section contains: complexity: "{light|standard|complex}"
       4. Verify complexity assignment instructions exist
-    passes: false
+    passes: true
 
   - id: C13
     section: S3
@@ -342,7 +342,7 @@ checklist:
       4. Verify it reads model-config.yaml
       5. Read skills/do/heads-down-phase.md
       6. Verify Agent() dispatches include model: parameter
-    passes: false
+    passes: true
 
   - id: C14
     section: S6
@@ -356,7 +356,7 @@ checklist:
       2. Expected: no output (no quoted step values)
       3. Run: grep -rn 'step:' skills/ | head -10
       4. Verify: all step values are plain integers
-    passes: false
+    passes: true
 
   - id: C15
     section: S6
@@ -372,7 +372,7 @@ checklist:
       4. Verify branch: and worktree: fields exist
       5. Read skills/do/SKILL.md status.yaml templates
       6. Verify complexity: field exists
-    passes: false
+    passes: true
 
   - id: C16
     section: S8
@@ -414,7 +414,7 @@ checklist:
       2. Verify: ExitWorktree(action: "keep") appears in the Merge flow
       3. Verify: ExitWorktree(action: "remove") does NOT appear in the Merge flow
       4. Verify: ExitWorktree("discard") or similar only appears in the Discard flow
-    passes: false
+    passes: true
 
   - id: C19
     section: S9
@@ -428,7 +428,7 @@ checklist:
       2. Verify: git worktree remove .claude/worktrees/{slug}
       3. Verify: git branch -D plan/{slug}
       4. Verify cleanup happens AFTER git merge --squash and git commit
-    passes: false
+    passes: true
 
   - id: C20
     section: S12
@@ -509,4 +509,4 @@ checklist:
     test_plan: |
       1. Run: ls tests/test-clean-memory-step*.sh 2>/dev/null | wc -l
       2. Expected: 0
-    passes: false
+    passes: true

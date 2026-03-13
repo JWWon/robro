@@ -69,8 +69,9 @@ Check for these patterns across the sprint history:
 If sprint number >= 30:
 - Stop execution regardless of gate results
 - Log final state to build-progress.md: "Hard cap reached at sprint 30."
-- Set `skill: none` in status.yaml
 - Report final summary with remaining failing items
+- Present to user via AskUserQuestion: "Sprint hard cap (30) reached with {remaining} failing items. Options: Merge partial progress | Keep in worktree | Discard"
+- Handle response the same as the convergence merge flow above
 
 ## Convergence Reached
 
@@ -78,23 +79,7 @@ If all 5 gates pass:
 
 1. Log to build-progress.md: "Build converged! All spec items passing."
 
-2. Set status.yaml:
-   ```yaml
-   skill: none
-   step: 0
-   sprint: {N}
-   phase: done
-   complexity: standard
-   branch: plan/{slug}
-   worktree: .claude/worktrees/{slug}
-   detail: "Converged — all gates passed"
-   next: "Build complete"
-   gate: ""
-   attempt: 1
-   reinforcement_count: 0
-   ```
-
-3. Append final summary to build-progress.md:
+2. Append final summary to build-progress.md:
    ```markdown
    ## CONVERGENCE — Sprint {N} — {timestamp}
    - Total sprints: {N}
@@ -104,7 +89,82 @@ If all 5 gates pass:
    - Pathologies encountered: {list}
    ```
 
-4. Print summary to user.
+3. **Present merge summary and ask for approval** via AskUserQuestion:
+   ```
+   Build converged! All spec.yaml items passing.
+
+   Summary:
+   - Sprints: {N}
+   - Spec items: {passing}/{total} ({superseded} superseded)
+   - Branch: plan/{slug}
+   - Commits on branch: {count from git log main..HEAD --oneline}
+
+   Merge to main via squash merge?
+
+   Options:
+   - "Merge" — squash merge to main, delete worktree and branch
+   - "Keep" — stay in worktree for manual review before merging
+   - "Discard" — delete worktree and branch without merging
+   ```
+
+4. **Handle user response**:
+
+   **If "Merge"**:
+   a. Exit the worktree:
+      ```
+      ExitWorktree(action: "keep")
+      ```
+      This returns the session to the main repo. The worktree remains on disk for the merge.
+
+   b. Squash merge:
+      ```bash
+      git merge --squash plan/{slug}
+      git commit -m "feat({slug}): {one-line description from idea.md goal}"
+      ```
+      If merge conflicts occur, present them to the user via AskUserQuestion. Do NOT auto-resolve -- let the user decide.
+
+   c. Clean up worktree and branch:
+      ```bash
+      git worktree remove .claude/worktrees/{slug}
+      git branch -D plan/{slug}
+      ```
+
+   d. Set final status:
+      ```yaml
+      skill: none
+      sprint: {N}
+      phase: done
+      detail: "Converged and merged to main"
+      next: "Build complete"
+      ```
+
+   e. Print final message:
+      ```
+      Merged to main: feat({slug}): {description}
+      Worktree and branch cleaned up.
+      ```
+
+   **If "Keep"**:
+   - Set status.yaml:
+     ```yaml
+     skill: none
+     sprint: {N}
+     phase: done
+     detail: "Converged — kept in worktree for manual review"
+     next: "Manual merge when ready"
+     ```
+   - Print: "Staying in worktree. To merge later: exit the worktree, run `git merge --squash plan/{slug}`, then clean up with `git worktree remove .claude/worktrees/{slug} && git branch -D plan/{slug}`."
+
+   **If "Discard"**:
+   a. Exit the worktree:
+      ```
+      ExitWorktree(action: "discard")
+      ```
+   b. Clean up:
+      ```bash
+      git branch -D plan/{slug}
+      ```
+   c. Set status: `skill: none`, `detail: "Discarded"`
 
 ## Not Yet Converged
 
