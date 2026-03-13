@@ -80,6 +80,32 @@ Next: ${next_action}"
   fi
 fi
 
+# If no active status found in docs/plans/, check worktrees for active plans
+if [ -z "$status_file" ] || [ "$skill" = "none" ] || [ -z "$skill" ]; then
+  WORKTREE_DIR=".claude/worktrees"
+  if [ -d "$WORKTREE_DIR" ]; then
+    for wt_dir in "$WORKTREE_DIR"/*/; do
+      [ -d "$wt_dir" ] || continue
+      for plan_dir in "${wt_dir}docs/plans"/*/; do
+        [ -d "$plan_dir" ] || continue
+        candidate="${plan_dir}status.yaml"
+        [ -f "$candidate" ] || continue
+        wt_skill=$(grep "^skill:" "$candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
+        [ -z "$wt_skill" ] || [ "$wt_skill" = "none" ] && continue
+        wt_name=$(basename "$wt_dir")
+        wt_step=$(grep "^step:" "$candidate" 2>/dev/null | head -1 | sed 's/^step: *//; s/"//g')
+        wt_detail=$(grep "^detail:" "$candidate" 2>/dev/null | head -1 | sed 's/^detail: *//; s/"//g')
+        context="${context}
+
+WORKTREE RESUME: Plan '$(basename "$plan_dir")' is active in worktree '${wt_name}'.
+Skill: /robro:${wt_skill}, step ${wt_step} (${wt_detail})
+To resume: Run EnterWorktree(name: \"${wt_name}\") to switch to the worktree."
+        break 2
+      done
+    done
+  fi
+fi
+
 # List all plans briefly
 all_plans=""
 if [ -d "$PLANS_DIR" ]; then
