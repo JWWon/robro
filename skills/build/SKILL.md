@@ -95,8 +95,9 @@ Summary:
 Read `skills/build/retro-phase.md` for detailed instructions.
 
 Summary:
-- Dispatch retro-analyst agent with sprint data
-- Receives structured report: Broken Assumptions, Emerged Patterns, Knowledge Gaps, Proposed Mutations, Proposed Level-ups
+- Dispatch retro-analyst agent with sprint data, CONFIG_BASELINE, and CONFIG_ANALYSIS_FRAMEWORK
+- Receives structured report: Broken Assumptions, Emerged Patterns, Knowledge Gaps, Proposed Mutations, Proposed Level-ups, Configuration Effectiveness
+- Includes mandatory Configuration Effectiveness Analysis comparing project config baseline against sprint reality
 - Save report to discussion/retro-sprint-{N}.md
 - Report feeds directly into Level-up phase
 
@@ -107,6 +108,7 @@ Summary:
 - Apply spec mutations (ADD/SUPERSEDE only, per D3) from retro's Proposed Mutations
 - Log all mutations to spec-mutations.log
 - Flip `passes` for items that passed review (FLIP operations)
+- Process configuration suggestions from retro's Config Effectiveness section alongside Proposed Level-ups
 - Execute 5-step level-up flow for Proposed Level-ups:
   1. Analyze emerged patterns and knowledge gaps
   2. Search community references live (ComposioHQ/awesome-claude-skills, wshobson/agents)
