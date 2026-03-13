@@ -57,7 +57,7 @@ Available events (case-sensitive): `PreToolUse`, `PostToolUse`, `PostToolUseFail
 
 Hook types: `command` (shell), `prompt` (LLM eval), `agent` (agentic verifier).
 
-<!-- robro:managed:start [0.1.0] -->
+<!-- robro:managed:start [0.1.1] -->
 ## Robro Plugin
 
 Robro extends Claude Code with a structured planning and execution pipeline.

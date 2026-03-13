@@ -180,6 +180,12 @@ The immutability rule from `/robro:plan` (items can never be removed or edited) 
 - **Hooks** (`hooks/hooks.json`): Event handlers for `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, etc. Types: `command`, `prompt`, `agent`.
 - **`${CLAUDE_PLUGIN_ROOT}`**: Environment variable resolving to plugin install path. Use in hooks, MCP configs, and scripts.
 
+---
+
+## Development
+
+This section is for working ON the plugin codebase. See `.claude/rules/plugin-dev.md` for file placement conventions.
+
 ### Testing
 
 ```bash

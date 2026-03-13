@@ -27,6 +27,10 @@ Plans live in `docs/plans/YYMMDD_{name}/`:
 - `status.yaml` — Pipeline state (drives hooks, gitignored)
 - `spec-mutations.log` — Append-only audit trail for spec changes during build
 
+### Worktree Workflow
+
+Each plan cycle uses a git worktree for branch isolation. `/robro:idea` works on main (no commits). `/robro:plan` creates a worktree at `.claude/worktrees/{slug}/` and works on branch `plan/{slug}`. `/robro:do` works inside the worktree, committing freely. The converge phase squash-merges to main -- one clean commit per plan cycle. On session start, `session-start.sh` detects active worktrees and prompts re-entry.
+
 ### Key Rules
 
 - **Skills orchestrate, agents execute.** Only skills interact with the user. Agents receive context, do work, return structured output.
@@ -56,12 +60,12 @@ Robro hooks fire fresh on every event to inject focused guidance that survives c
 
 | Event | Purpose |
 |-------|---------|
-| SessionStart | Detect active pipeline phase, restore state for resume |
+| SessionStart | Detect active pipeline phase, restore state for resume; detect active worktrees and prompt re-entry |
 | UserPromptSubmit | Detect keywords → suggest skills; re-inject planning rules every prompt |
 | PreToolUse (Write/Edit) | Warn if writing code without an approved spec |
 | PostToolUse (Write/Edit) | Track progress against active spec during implementation |
 | PreCompact | Persist pipeline state before context compression |
-| Stop | Auto-continue build execution with circuit breakers |
+| Stop | Auto-continue do execution with circuit breakers |
 | PostToolUseFailure | Track recent errors for rate limit detection |
 
 ### Build Agents
@@ -78,7 +82,7 @@ Robro hooks fire fresh on every event to inject focused guidance that survives c
 
 ### Ambiguity Scoring
 
-Used by idea and spec skills to gate progression:
+Used by idea and plan skills to gate progression:
 
 | Dimension | Weight |
 |-----------|--------|
