@@ -107,7 +107,7 @@ If any gate fails and no hard cap reached:
 2. Identify which items to target next sprint (failing items, regressed items)
 3. Update status.yaml for the next sprint:
    ```yaml
-   skill: build
+   skill: do
    sprint: {N+1}
    phase: brief
    step: "0"

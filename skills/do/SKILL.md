@@ -1,5 +1,5 @@
 ---
-name: build
+name: do
 description: Autonomously implements plan.md through evolutionary sprint cycles. Dispatches builder agents for parallel TDD execution, runs 3-stage peer review, produces structured retros, and evolves project agents/skills/rules. Uses stop hook auto-continue for multi-session chaining. Use when plan.md and spec.yaml exist and implementation should begin.
 argument-hint: "<plan directory or plan name>"
 ---
@@ -17,8 +17,8 @@ You are acting as a **Builder Companion**. Your goal is to autonomously implemen
 </Use_When>
 
 <Do_Not_Use_When>
-- No plan.md or spec.yaml exists — suggest /robro:spec first
-- User wants to modify the plan — suggest /robro:spec --review
+- No plan.md or spec.yaml exists — suggest /robro:plan first
+- User wants to modify the plan — suggest /robro:plan --review
 - User wants a single quick fix (just do it directly)
 </Do_Not_Use_When>
 
@@ -26,22 +26,22 @@ You are acting as a **Builder Companion**. Your goal is to autonomously implemen
 
 <HARD_GATE>
 Implementation happens ONLY through dispatched builder agents (inline or worktree-isolated) or Team teammates.
-The build skill orchestrates — it never writes implementation code directly.
-The build skill DOES write: status.yaml, build-progress.md, spec-mutations.log, spec.yaml mutations, and discussion/ files.
+The do skill orchestrates — it never writes implementation code directly.
+The do skill DOES write: status.yaml, build-progress.md, spec-mutations.log, spec.yaml mutations, and discussion/ files.
 </HARD_GATE>
 
 ## Prerequisites
 
 1. `plan.md` must exist with phased tasks and a File Map
 2. `spec.yaml` must exist with checklist items (all `passes: false` initially)
-3. If either is missing, suggest `/robro:spec` first
+3. If either is missing, suggest `/robro:plan` first
 
 ## Status Tracking
 
 At every phase transition and within phases, update `{plan_dir}/status.yaml`:
 
 ```yaml
-skill: build
+skill: do
 step: "brief"
 sprint: 1
 phase: brief
@@ -56,10 +56,10 @@ This file drives the stop hook (auto-continue) and all pipeline hooks (session-s
 
 ## Sprint Lifecycle
 
-Each sprint follows 6 phases. Read the detailed phase file for each phase's full instructions. The phase files are in `skills/build/` alongside this SKILL.md.
+Each sprint follows 6 phases. Read the detailed phase file for each phase's full instructions. The phase files are in `skills/do/` alongside this SKILL.md.
 
 ### Phase 1: Brief
-Read `skills/build/brief-phase.md` for detailed instructions.
+Read `skills/do/brief-phase.md` for detailed instructions.
 
 Summary:
 - Read spec.yaml, identify items with `passes: false`
@@ -70,7 +70,7 @@ Summary:
 - Reset stop hook counter file
 
 ### Phase 2: Heads-down
-Read `skills/build/heads-down-phase.md` for detailed instructions.
+Read `skills/do/heads-down-phase.md` for detailed instructions.
 
 Summary:
 - For each level, use the execution path classified by Brief phase:
@@ -81,7 +81,7 @@ Summary:
 - Log task outcomes and execution path to build-progress.md
 
 ### Phase 3: Review
-Read `skills/build/review-phase.md` for detailed instructions.
+Read `skills/do/review-phase.md` for detailed instructions.
 
 Summary:
 - Dispatch reviewer agent for 3-stage pipeline
@@ -92,7 +92,7 @@ Summary:
 - For items that fail: log failures, they go back to builder next sprint
 
 ### Phase 4: Retro
-Read `skills/build/retro-phase.md` for detailed instructions.
+Read `skills/do/retro-phase.md` for detailed instructions.
 
 Summary:
 - Dispatch retro-analyst agent with sprint data, CONFIG_BASELINE, and CONFIG_ANALYSIS_FRAMEWORK
@@ -102,7 +102,7 @@ Summary:
 - Report feeds directly into Level-up phase
 
 ### Phase 5: Level-up
-Read `skills/build/level-up-phase.md` for detailed instructions.
+Read `skills/do/level-up-phase.md` for detailed instructions.
 
 Summary:
 - Apply spec mutations (ADD/SUPERSEDE only, per D3) from retro's Proposed Mutations
@@ -120,7 +120,7 @@ Summary:
 - Log every create/update action to build-progress.md
 
 ### Phase 6: Converge
-Read `skills/build/converge-phase.md` for detailed instructions.
+Read `skills/do/converge-phase.md` for detailed instructions.
 
 Summary:
 Run 5-gate convergence check:

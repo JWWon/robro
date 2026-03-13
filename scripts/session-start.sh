@@ -4,7 +4,7 @@
 
 PLANS_DIR="docs/plans"
 
-context="Robro plugin active. Skills: /robro:idea (PM) | /robro:spec (EM) | /robro:build (Builder)"
+context="Robro plugin active. Skills: /robro:idea (PM) | /robro:plan (EM) | /robro:do (Builder)"
 
 # Find the most recently modified status.yaml (always at plan root)
 status_file=""
@@ -46,10 +46,10 @@ RESUME: '${plan_name}' — /robro:${skill}, step ${step}"
     if [ "$skill" = "idea" ] && [ -f "${plan_dir}/discussion/interview-state.md" ]; then
       context="${context}
 Read ${plan_dir}/discussion/interview-state.md to restore interview state."
-    elif [ "$skill" = "spec" ]; then
+    elif [ "$skill" = "plan" ]; then
       context="${context}
 Read ${plan_dir}/discussion/ files to restore pipeline state."
-    elif [ "$skill" = "build" ]; then
+    elif [ "$skill" = "do" ]; then
       sprint=$(grep "^sprint:" "$status_file" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
       phase=$(grep "^phase:" "$status_file" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
 
@@ -72,7 +72,7 @@ Last logged: ${last_learning}"
       context="${context}
 Sprint ${sprint}, phase ${phase}.
 Read ${plan_dir}/status.yaml and ${plan_dir}/discussion/build-progress.md to restore build state.
-Use /robro:build to continue execution."
+Use /robro:do to continue execution."
     fi
 
     [ -n "$next_action" ] && context="${context}

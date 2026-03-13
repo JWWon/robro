@@ -30,7 +30,7 @@ These plugins shaped robro's architecture. Consult them when designing new skill
 ### Pipeline Flow
 
 ```
-/robro:idea (PM) ──→ idea.md ──→ /robro:spec (EM) ──→ plan.md + spec.yaml ──→ /robro:build (Builder) ──→ working code
+/robro:idea (PM) ──→ idea.md ──→ /robro:plan (EM) ──→ plan.md + spec.yaml ──→ /robro:do (Builder) ──→ working code
 ```
 
 The planning phase is the foundation. No code gets written until idea.md has ambiguity ≤ 0.1, plan.md passes automated review, and spec.yaml cross-validates against both.
@@ -71,8 +71,8 @@ robro/
 │   └── marketplace.json     # Marketplace distribution config
 ├── skills/                  # Agent skills (name/SKILL.md structure)
 │   ├── idea/SKILL.md        # PM: Socratic interview → idea.md
-│   ├── spec/SKILL.md        # EM: Technical spec → plan.md + spec.yaml
-│   ├── build/SKILL.md       # Builder: evolutionary sprint execution
+│   ├── plan/SKILL.md        # EM: Technical spec → plan.md + spec.yaml
+│   ├── do/SKILL.md          # Builder: evolutionary sprint execution
 │   │   ├── brief-phase.md
 │   │   ├── heads-down-phase.md
 │   │   ├── review-phase.md
@@ -80,36 +80,35 @@ robro/
 │   │   ├── level-up-phase.md
 │   │   └── converge-phase.md
 │   ├── setup/SKILL.md       # Project configuration
-│   ├── tune/SKILL.md        # Configuration audit & optimization
-│   └── clean-memory/SKILL.md # Completed plan cleanup
+│   └── tune/SKILL.md        # Configuration audit & optimization
 ├── agents/                  # Subagent markdown definitions
-│   ├── researcher.md        # Web + codebase exploration (idea, spec, build)
-│   ├── architect.md         # Technical review (spec, build)
-│   ├── critic.md            # Ambiguity scoring & gap analysis (idea, spec, build)
-│   ├── planner.md           # Task breakdown (spec)
+│   ├── researcher.md        # Web + codebase exploration (idea, plan, do)
+│   ├── architect.md         # Technical review (plan, do)
+│   ├── critic.md            # Ambiguity scoring & gap analysis (idea, plan, do)
+│   ├── planner.md           # Task breakdown (plan)
 │   ├── contrarian.md        # Challenges assumptions (idea, round 4+)
 │   ├── simplifier.md        # YAGNI simplification (idea, round 6+)
 │   ├── ontologist.md        # Deep reframing (idea, round 8+)
-│   ├── builder.md           # TDD code execution — inline or worktree-isolated (build)
-│   ├── reviewer.md          # 3-stage peer review (build)
-│   ├── retro-analyst.md     # Structured retro report (build)
-│   └── conflict-resolver.md # Merge conflict resolution (build)
+│   ├── builder.md           # TDD code execution — inline or worktree-isolated (do)
+│   ├── reviewer.md          # 3-stage peer review (do)
+│   ├── retro-analyst.md     # Structured retro report (do)
+│   └── conflict-resolver.md # Merge conflict resolution (do)
 ├── hooks/
 │   └── hooks.json           # Event handler config
 ├── scripts/                 # Hook shell scripts
 │   ├── session-start.sh     # Inject pipeline state + skill awareness on session start
-│   ├── keyword-detector.sh  # Detect idea/spec/build keywords in prompts
+│   ├── keyword-detector.sh  # Detect idea/plan/do keywords in prompts
 │   ├── pipeline-guard.sh    # Re-inject planning rules on every prompt (survives compression)
-│   ├── spec-gate.sh         # Warn on Write/Edit without a spec + build scope check
-│   ├── drift-monitor.sh     # Track progress against active spec + build sprint context
+│   ├── spec-gate.sh         # Warn on Write/Edit without a spec + do scope check
+│   ├── drift-monitor.sh     # Track progress against active spec + do sprint context
 │   ├── pre-compact.sh       # Persist pipeline state before context compression
-│   ├── stop-hook.sh         # Auto-continue build execution with circuit breakers
+│   ├── stop-hook.sh         # Auto-continue do execution with circuit breakers
 │   └── error-tracker.sh     # Track recent errors for rate limit detection
 └── docs/plans/              # Generated plan artifacts (per project)
     └── YYMMDD_{name}/
         ├── idea.md           # Product requirements (from /robro:idea)
-        ├── plan.md           # Implementation phases (from /robro:spec)
-        ├── spec.yaml         # Validation checklist (from /robro:spec)
+        ├── plan.md           # Implementation phases (from /robro:plan)
+        ├── spec.yaml         # Validation checklist (from /robro:plan)
         ├── spec-mutations.log # Append-only audit trail (committed)
         ├── status.yaml       # Pipeline state (gitignored)
         ├── build-progress.md # Implementation log (in discussion/, gitignored)
@@ -120,9 +119,9 @@ robro/
 ### Core Skills
 
 - **`/robro:idea`** — Product Manager role. Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring with a ≤ 0.1 threshold gate.
-- **`/robro:spec`** — Engineering Manager role. Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness.
-- **`/robro:build`** — Builder role. Autonomously implements plan.md through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Uses stop hook auto-continue for multi-session chaining. Produces working code with all spec.yaml items flipped to `passes: true`.
-- **`/robro:tune`** — Configuration auditor. Analyzes project's `.claude/` setup against codebase patterns and git history to identify gaps, stale items, and improvements. Shares the same analysis framework as the build cycle's retro phase.
+- **`/robro:plan`** — Engineering Manager role. Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness.
+- **`/robro:do`** — Builder role. Autonomously implements plan.md through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Uses stop hook auto-continue for multi-session chaining. Produces working code with all spec.yaml items flipped to `passes: true`.
+- **`/robro:tune`** — Configuration auditor. Analyzes project's `.claude/` setup against codebase patterns and git history to identify gaps, stale items, and improvements. Shares the same analysis framework as the do cycle's retro phase.
 
 ### Plan Artifacts
 
@@ -133,13 +132,13 @@ Each plan lives in `docs/plans/YYMMDD_{name}/`:
 - **`research/`** — Gitignored. Temporal web/codebase findings gathered during interviews.
 - **`discussion/`** — Gitignored. Interview transcripts, agent deliberation logs.
 - **`spec-mutations.log`** — Append-only event log at plan root (alongside spec.yaml). Records every spec.yaml mutation with timestamp, sprint, operation (ADD/SUPERSEDE), item path, and rationale. Committed to git for audit trail.
-- **`status.yaml`** — At plan root (not discussion/). Gitignored. Tracks full lifecycle state (idea/spec/build). Drives hook injection and cross-session resume.
+- **`status.yaml`** — At plan root (not discussion/). Gitignored. Tracks full lifecycle state (idea/plan/do). Drives hook injection and cross-session resume.
 - **`build-progress.md`** — In discussion/. Append-only implementation log with learnings, patterns, failures. Injected into agent context on session resume.
 - **`*.bak.*`** — Gitignored. Previous versions preserved before overwrites.
 
 ### Spec Mutation Rules (Build Phase)
 
-During `/robro:build`, spec.yaml evolves through restricted mutations:
+During `/robro:do`, spec.yaml evolves through restricted mutations:
 
 - **ADD**: New checklist item with `passes: false`. Must reference an existing section.
 - **SUPERSEDE**: Mark an item as superseded. Original text preserved. Add `status: superseded` and `superseded_by: CXX` fields. Superseded items are excluded from completeness gate.
@@ -151,7 +150,7 @@ Every mutation is logged to `spec-mutations.log` in tab-separated format:
 {ISO-timestamp}\tSPRINT:{N}\t{ADD|SUPERSEDE|FLIP}\t{item-path}\t{value}\tREASON: {rationale}
 ```
 
-The immutability rule from `/robro:spec` (items can never be removed or edited) is refined for build: items can be superseded (preserving the original) but never deleted or silently modified.
+The immutability rule from `/robro:plan` (items can never be removed or edited) is refined for do: items can be superseded (preserving the original) but never deleted or silently modified.
 
 ### Key Concepts
 

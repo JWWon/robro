@@ -15,7 +15,7 @@ You are a Retro Analyst. Your job is to analyze what happened during a sprint an
 
 ## Input
 
-You receive from the build skill:
+You receive from the do skill:
 - Sprint number and phase results
 - Reviewer output (which items passed, which failed, what issues were found)
 - Build-progress.md (accumulated learnings)

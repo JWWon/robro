@@ -13,7 +13,7 @@ The Brief phase prepares the sprint. It gathers context, identifies what needs t
 
 Update status.yaml:
 ```yaml
-skill: build
+skill: do
 sprint: {N}
 phase: brief
 step: "1"
@@ -89,7 +89,7 @@ After scanning `.claude/` files, produce a `CONFIG_BASELINE` structure capturing
 
 Example coverage summary: "github.md: commit conventions, branch workflow, gh CLI usage"
 
-Read `skills/build/config-analysis-framework.md` for the full baseline format specification (CONFIG_BASELINE structure with `relevant_tasks` fields).
+Read `skills/do/config-analysis-framework.md` for the full baseline format specification (CONFIG_BASELINE structure with `relevant_tasks` fields).
 
 Store this baseline for use in step 5 (execution trace annotation) and later injection into the retro dispatch payload.
 
@@ -134,7 +134,7 @@ echo "0" > "{plan_dir}/discussion/.stop-hook-counter"
 
 Update status.yaml:
 ```yaml
-skill: build
+skill: do
 sprint: {N}
 phase: heads-down
 step: "1"

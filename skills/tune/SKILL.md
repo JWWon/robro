@@ -1,6 +1,6 @@
 ---
 name: tune
-description: "Audit and optimize project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs). Use when you want to review your project setup for gaps, stale items, or improvement opportunities. Not for initial setup (use /robro:setup) or build-cycle analysis (happens automatically in /robro:build)."
+description: "Audit and optimize project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs). Use when you want to review your project setup for gaps, stale items, or improvement opportunities. Not for initial setup (use /robro:setup) or build-cycle analysis (happens automatically in /robro:do)."
 disable-model-invocation: true
 ---
 
@@ -18,8 +18,7 @@ You are auditing a project's Claude Code configuration for gaps, stale items, an
 
 <Do_Not_Use_When>
 - User wants initial setup — use /robro:setup instead
-- User wants to build/implement features — use /robro:build instead
-- User wants to clean up completed plans — use /robro:clean-memory instead
+- User wants to build/implement features — use /robro:do instead
 - A build is in progress and user hasn't acknowledged the warning
 </Do_Not_Use_When>
 
@@ -29,7 +28,7 @@ You are auditing a project's Claude Code configuration for gaps, stale items, an
 
 Check for active builds that could conflict:
 
-1. Scan `docs/plans/*/status.yaml` for any file where `skill: build` is set
+1. Scan `docs/plans/*/status.yaml` for any file where `skill: do` is set
 2. If found, warn via AskUserQuestion:
    "A build is in progress ({plan directory}). Running /robro:tune during a build may conflict with level-up changes. Continue anyway?"
    Options: "Continue anyway", "Cancel — I'll run tune after the build"
@@ -37,7 +36,7 @@ Check for active builds that could conflict:
 
 ### Step 1: Load Analysis Framework
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/build/config-analysis-framework.md` for:
+Read `${CLAUDE_PLUGIN_ROOT}/skills/do/config-analysis-framework.md` for:
 - Analysis dimensions (what to check for each config category)
 - CONFIG_BASELINE format specification
 - Comparison protocol
@@ -101,7 +100,7 @@ Each suggestion follows the format:
 | Operation | Type | Target | Evidence | Proposed Action |
 |-----------|------|--------|----------|-----------------|
 
-**Data source acknowledgment**: This analysis uses static codebase and git history. For deeper insights informed by actual execution data, run a `/robro:build` sprint — the retro phase performs sprint-informed configuration analysis automatically.
+**Data source acknowledgment**: This analysis uses static codebase and git history. For deeper insights informed by actual execution data, run a `/robro:do` sprint — the retro phase performs sprint-informed configuration analysis automatically.
 
 **Optional retro ingestion**: If `docs/plans/*/discussion/retro-sprint-*.md` files exist, offer to incorporate findings from past retros for richer analysis.
 

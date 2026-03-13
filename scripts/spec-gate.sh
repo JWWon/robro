@@ -40,7 +40,7 @@ if [ "$has_spec" = false ]; then
   fi
 
   if [ "$has_idea" = true ]; then
-    echo "Warning: Writing source code without a spec. An idea.md exists — consider running /robro:spec to create the technical spec before implementing."
+    echo "Warning: Writing source code without a spec. An idea.md exists — consider running /robro:plan to create the technical spec before implementing."
   else
     echo "Warning: Writing source code without a spec or idea. Consider running /robro:idea to define requirements first."
   fi
@@ -54,7 +54,7 @@ if [ "$has_spec" = true ]; then
     status_candidate="${dir}status.yaml"
     [ -f "$status_candidate" ] || continue
     build_skill=$(grep "^skill:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
-    if [ "$build_skill" = "build" ]; then
+    if [ "$build_skill" = "do" ]; then
       phase=$(grep "^phase:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
       if [ "$phase" = "heads-down" ]; then
         echo "Build active (Heads-down phase). Ensure this edit is within the scope of the current task."

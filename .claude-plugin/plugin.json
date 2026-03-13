@@ -8,6 +8,6 @@
   "license": "MIT",
   "repository": "https://github.com/JWWon/robro",
   "homepage": "https://github.com/JWWon/robro",
-  "keywords": ["planning", "spec", "requirements", "idea", "build", "implementation"],
+  "keywords": ["planning", "plan", "requirements", "idea", "do", "implementation"],
   "hooks": "./hooks/hooks.json"
 }

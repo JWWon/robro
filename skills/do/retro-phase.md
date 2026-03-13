@@ -15,7 +15,7 @@ Collect inputs for the retro-analyst agent:
 
 ### 2. Dispatch Retro-Analyst Agent
 
-Before dispatching, read `skills/build/config-analysis-framework.md` and include its full content as CONFIG_ANALYSIS_FRAMEWORK in the payload.
+Before dispatching, read `skills/do/config-analysis-framework.md` and include its full content as CONFIG_ANALYSIS_FRAMEWORK in the payload.
 
 Dispatch the **Retro Analyst** agent with:
 
@@ -75,7 +75,7 @@ Append retro summary to build-progress.md:
 
 Update status.yaml:
 ```yaml
-skill: build
+skill: do
 sprint: {N}
 phase: level-up
 step: "1"

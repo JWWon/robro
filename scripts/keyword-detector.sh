@@ -28,12 +28,12 @@ case "$PROMPT_LOWER" in
     echo "Suggestion: Use /robro:idea to start a structured requirements interview."
     exit 0
     ;;
-  *"robro spec"*|*"robro:spec"*)
-    echo "Suggestion: Use /robro:spec to generate technical spec and implementation plan."
+  *"robro plan"*|*"robro:plan"*)
+    echo "Suggestion: Use /robro:plan to generate technical spec and implementation plan."
     exit 0
     ;;
-  *"robro build"*|*"robro:build"*)
-    echo "Suggestion: Use /robro:build to start autonomous implementation of the plan."
+  *"robro do"*|*"robro:do"*)
+    echo "Suggestion: Use /robro:do to start autonomous execution of the plan."
     exit 0
     ;;
   *"robro tune"*|*"robro:tune"*)
@@ -74,7 +74,7 @@ for pattern in "${idea_patterns[@]}"; do
   fi
 done
 
-# Tier 2.5: Natural language triggers for /robro:spec
+# Tier 2.5: Natural language triggers for /robro:plan
 spec_patterns=(
   "plan this"
   "break this down"
@@ -101,9 +101,9 @@ for pattern in "${spec_patterns[@]}"; do
         done
       fi
       if [ "$has_idea" = true ]; then
-        echo "An idea.md exists. Consider using /robro:spec to generate the technical spec and implementation plan."
+        echo "An idea.md exists. Consider using /robro:plan to generate the technical spec and implementation plan."
       else
-        echo "No idea.md found. Consider running /robro:idea first to define requirements, then /robro:spec for the technical plan."
+        echo "No idea.md found. Consider running /robro:idea first to define requirements, then /robro:plan for the technical plan."
       fi
     fi
     exit 0
@@ -143,9 +143,9 @@ impl_patterns=(
 for pattern in "${impl_patterns[@]}"; do
   if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
     if [ "$has_spec" = true ]; then
-      echo "A spec exists. Consider using /robro:build for structured autonomous implementation."
+      echo "A spec exists. Consider using /robro:do for structured autonomous execution."
     elif [ "$has_spec" = false ]; then
-      echo "No spec found in docs/plans/. Consider running /robro:idea then /robro:spec before implementing to ensure clear requirements and a validated plan."
+      echo "No spec found in docs/plans/. Consider running /robro:idea then /robro:plan before implementing to ensure clear requirements and a validated plan."
     fi
     exit 0
   fi

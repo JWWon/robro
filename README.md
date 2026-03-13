@@ -47,8 +47,8 @@ That's it. Robro interviews you, plans the work, and builds it -- step by step.
 
 ```
 /robro:idea   →  Socratic interview exposed hidden assumptions, produced idea.md
-/robro:spec   →  Multi-agent review produced plan.md + spec.yaml
-/robro:build  →  Autonomous TDD sprints until all spec items pass
+/robro:plan   →  Multi-agent review produced plan.md + spec.yaml
+/robro:do     →  Autonomous TDD sprints until all spec items pass
 ```
 
 No code was written until the idea had low ambiguity, the plan passed automated review, and the spec cross-validated against both.
@@ -70,14 +70,14 @@ Robro fixes this by adding structure where it matters most: **before code gets w
 Robro operates through a 3-stage pipeline, each driven by a dedicated skill:
 
 ```
-/robro:idea (PM) → idea.md → /robro:spec (EM) → plan.md + spec.yaml → /robro:build (Builder) → working code
+/robro:idea (PM) → idea.md → /robro:plan (EM) → plan.md + spec.yaml → /robro:do (Builder) → working code
 ```
 
 | Stage | Role | Input | Output |
 |-------|------|-------|--------|
 | **Idea** | Product Manager | Your rough idea | `idea.md` -- structured requirements with ambiguity scoring |
-| **Spec** | Engineering Manager | `idea.md` | `plan.md` + `spec.yaml` -- phased implementation plan with validation checklist |
-| **Build** | Builder | `plan.md` + `spec.yaml` | Working code -- autonomous sprint execution with TDD |
+| **Plan** | Engineering Manager | `idea.md` | `plan.md` + `spec.yaml` -- phased implementation plan with validation checklist |
+| **Do** | Builder | `plan.md` + `spec.yaml` | Working code -- autonomous sprint execution with TDD |
 
 The planning phase is the foundation. No code gets written until the idea has low ambiguity, the plan passes automated review, and the spec cross-validates against both.
 
@@ -88,10 +88,9 @@ The planning phase is the foundation. No code gets written until the idea has lo
 | Skill | Role | Description |
 |-------|------|-------------|
 | `/robro:idea` | Product Manager | Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring to gate progression. |
-| `/robro:spec` | Engineering Manager | Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness. |
-| `/robro:build` | Builder | Autonomously implements `plan.md` through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Produces working code with all spec items verified. |
+| `/robro:plan` | Engineering Manager | Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness. |
+| `/robro:do` | Builder | Autonomously implements `plan.md` through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Produces working code with all spec items verified. |
 | `/robro:setup` | Configuration | Configures your project for robro: sets up CLAUDE.md sections, MCP/skill checklist, and `.gitignore` entries. |
-| `/robro:clean-memory` | Cleanup | Cross-plan analysis of completed plans and deletion of stale artifacts. Keeps your `docs/plans/` directory tidy. |
 | `/robro:tune` | Configuration | Audits and optimizes project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs) using codebase and git history analysis. |
 
 ---
@@ -106,8 +105,8 @@ Robro follows a core design principle: **skills orchestrate, agents execute**. S
 Skills (user-facing)          Agents (workers)
 --------------------          ----------------
 /robro:idea  ───────────────> Researcher, Critic, Contrarian, Simplifier, Ontologist
-/robro:spec  ───────────────> Researcher, Architect, Critic, Planner
-/robro:build ───────────────> Builder, Reviewer, Retro Analyst, Conflict Resolver
+/robro:plan  ───────────────> Researcher, Architect, Critic, Planner
+/robro:do    ───────────────> Builder, Reviewer, Retro Analyst, Conflict Resolver
 ```
 
 ### Agents
@@ -116,17 +115,17 @@ Twelve agents, each with a specialized role. Loaded on-demand, never preloaded:
 
 | Agent | Role | Used By |
 |-------|------|---------|
-| **Researcher** | Web and codebase exploration for context gathering | idea, spec, build |
-| **Critic** | Ambiguity scoring, gap analysis, consensus gate | idea, spec, build |
+| **Researcher** | Web and codebase exploration for context gathering | idea, plan, do |
+| **Critic** | Ambiguity scoring, gap analysis, consensus gate | idea, plan, do |
 | **Contrarian** | Challenges every assumption ("What if the opposite were true?") | idea |
 | **Simplifier** | Removes complexity ("What's the simplest thing that could work?") | idea |
 | **Ontologist** | Deep reframing ("What IS this, really?") | idea |
-| **Architect** | Technical review and soundness verification | spec, build |
-| **Planner** | Task breakdown with dependency ordering and parallel execution | spec |
-| **Builder** | TDD task execution -- inline or worktree-isolated | build |
-| **Reviewer** | 3-stage peer review: mechanical, semantic, consensus | build |
-| **Retro Analyst** | Structured sprint retrospective with pattern extraction | build |
-| **Conflict Resolver** | Merge conflict resolution from parallel dispatches | build |
+| **Architect** | Technical review and soundness verification | plan, do |
+| **Planner** | Task breakdown with dependency ordering and parallel execution | plan |
+| **Builder** | TDD task execution -- inline or worktree-isolated | do |
+| **Reviewer** | 3-stage peer review: mechanical, semantic, consensus | do |
+| **Retro Analyst** | Structured sprint retrospective with pattern extraction | do |
+| **Conflict Resolver** | Merge conflict resolution from parallel dispatches | do |
 
 Challenge agents (Contrarian, Simplifier, Ontologist) are applied as **inline lenses** first -- reading the agent's perspective and applying it in-place. Only escalated to a full subagent when deeper investigation is needed.
 
@@ -139,7 +138,7 @@ As conversations grow long, Claude compresses earlier messages -- including skil
 | **Pipeline guard** | Re-injects planning rules every prompt so the agent never forgets its current phase |
 | **Spec gate** | Warns if code is being written without an approved spec |
 | **Drift monitor** | Tracks progress against the active spec during implementation |
-| **Stop hook** | Auto-continues build execution across context limits with circuit breakers |
+| **Stop hook** | Auto-continues do execution across context limits with circuit breakers |
 | **Error tracker** | Monitors recent errors for rate limit detection |
 | **Pre-compact** | Persists pipeline state before context compression |
 

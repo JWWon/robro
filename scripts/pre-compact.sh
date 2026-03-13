@@ -21,10 +21,10 @@ if [ -d "$PLANS_DIR" ]; then
 
   if [ "$skill" = "idea" ]; then
     echo "- Update discussion/interview-state.md with current round, scores, requirements, and open threads."
-  elif [ "$skill" = "spec" ]; then
+  elif [ "$skill" = "plan" ]; then
     echo "- Ensure discussion/ agent outputs (architect-review.md, critic-assessment.md) are current."
     echo "- Note current review iteration count in status.yaml detail field."
-  elif [ "$skill" = "build" ]; then
+  elif [ "$skill" = "do" ]; then
     echo "- Update status.yaml with current sprint, phase, task, and next action."
     echo "- Ensure discussion/build-progress.md has latest learnings appended."
     echo "- If in Heads-down phase, note which tasks are complete and which are pending."

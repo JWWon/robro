@@ -68,14 +68,14 @@ case "$skill" in
         echo "Action: Present pre-write confirmation checkpoints via AskUserQuestion."
         ;;
       10|11)
-        echo "Action: Write idea.md if gate conditions are met, then suggest /robro:spec."
+        echo "Action: Write idea.md if gate conditions are met, then suggest /robro:plan."
         ;;
       *)
         echo "Action: Continue Socratic interview. Use AskUserQuestion — one question targeting the weakest ambiguity dimension."
         ;;
     esac
     ;;
-  spec)
+  plan)
     case "$step" in
       3.5)
         echo "Action: Present architecture decisions to user via AskUserQuestion for approval."
@@ -91,7 +91,7 @@ case "$skill" in
         ;;
     esac
     ;;
-  build)
+  do)
     sprint=$(grep "^sprint:" "$status_file" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
     phase=$(grep "^phase:" "$status_file" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
     case "$phase" in

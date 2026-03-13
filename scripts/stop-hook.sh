@@ -23,7 +23,7 @@ if [ -d "$PLANS_DIR" ]; then
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue
     skill=$(grep "^skill:" "$candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
-    [ "$skill" = "build" ] || continue
+    [ "$skill" = "do" ] || continue
     if stat -f %m "$candidate" >/dev/null 2>&1; then
       mtime=$(stat -f %m "$candidate")
     else
@@ -94,7 +94,7 @@ fi
 reason="Build active: Sprint ${sprint:-?}, ${phase:-?} phase.${spec_progress}"
 [ -n "$detail" ] && reason="${reason} Current: ${detail}."
 [ -n "$next_action" ] && reason="${reason} Next: ${next_action}."
-reason="${reason} Continue with /robro:build to resume."
+reason="${reason} Continue with /robro:do to resume."
 
 # Output the block decision
 jq -n --arg reason "$reason" '{"decision":"block","reason":$reason}'

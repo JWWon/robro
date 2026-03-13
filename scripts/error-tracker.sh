@@ -20,7 +20,7 @@ if [ -d "$PLANS_DIR" ]; then
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue
     skill=$(grep "^skill:" "$candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
-    [ "$skill" = "build" ] && status_file=$candidate && break
+    [ "$skill" = "do" ] && status_file=$candidate && break
   done
 fi
 

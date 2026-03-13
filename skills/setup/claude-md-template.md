@@ -5,7 +5,7 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 ### Pipeline
 
 ```
-/robro:idea (PM) → idea.md → /robro:spec (EM) → plan.md + spec.yaml → /robro:build (Builder) → working code
+/robro:idea (PM) → idea.md → /robro:plan (EM) → plan.md + spec.yaml → /robro:do (Builder) → working code
 ```
 
 ### Available Skills
@@ -13,17 +13,16 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 | Skill | Role | Description |
 |-------|------|-------------|
 | `/robro:idea` | Product Manager | Socratic interview that transforms vague ideas into structured requirements (idea.md). Uses ambiguity scoring with ≤ 0.1 threshold. |
-| `/robro:spec` | Engineering Manager | Converts idea.md into phased implementation plan (plan.md) and validation checklist (spec.yaml). Multi-agent review loop. |
-| `/robro:build` | Builder | Autonomously implements plan.md through evolutionary sprint cycles. Dispatches builder agents, runs peer review, evolves project knowledge. |
+| `/robro:plan` | Engineering Manager | Converts idea.md into phased implementation plan (plan.md) and validation checklist (spec.yaml). Multi-agent review loop. |
+| `/robro:do` | Builder | Autonomously implements plan.md through evolutionary sprint cycles. Dispatches builder agents, runs peer review, evolves project knowledge. |
 | `/robro:setup` | Setup | Configures project for robro: CLAUDE.md section, MCP/skill recommendations, .gitignore rules. |
-| `/robro:clean-memory` | Cleanup | Analyzes completed plans for patterns, recommends improvements, then deletes confirmed plans. |
 | `/robro:tune` | Configuration | Audits and optimizes project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs). Codebase + git history analysis. |
 
 ### Plan Artifacts
 
 Plans live in `docs/plans/YYMMDD_{name}/`:
 - `idea.md` — Product requirements from /robro:idea
-- `plan.md` — Phased implementation tasks from /robro:spec
+- `plan.md` — Phased implementation tasks from /robro:plan
 - `spec.yaml` — Validation checklist (source of truth for testing)
 - `status.yaml` — Pipeline state (drives hooks, gitignored)
 - `spec-mutations.log` — Append-only audit trail for spec changes during build
@@ -45,9 +44,9 @@ Plans live in `docs/plans/YYMMDD_{name}/`:
 
 ### Iteration Policy
 
-**Planning (/robro:idea, /robro:spec):** No arbitrary iteration caps. Loops exit on passing verdicts from both Architect and Critic. Every 3 iterations, check in with the user. Never silently give up.
+**Planning (/robro:idea, /robro:plan):** No arbitrary iteration caps. Loops exit on passing verdicts from both Architect and Critic. Every 3 iterations, check in with the user. Never silently give up.
 
-**Build (/robro:build):** Fully autonomous — no user check-ins during execution. Sprint hard cap: 30. Stop hook reinforcement cap: 50 per session. Circuit breakers: rate limit (429), high reinforcement count.
+**Build (/robro:do):** Fully autonomous — no user check-ins during execution. Sprint hard cap: 30. Stop hook reinforcement cap: 50 per session. Circuit breakers: rate limit (429), high reinforcement count.
 
 Spec.yaml checklist items during build use restricted mutation: ADD or SUPERSEDE only, never in-place modification. Every mutation logged to spec-mutations.log.
 

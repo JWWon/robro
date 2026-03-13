@@ -1,6 +1,6 @@
 ---
-name: spec
-description: Transforms product requirements (idea.md) into technical specifications and implementation plans. Use when an idea.md exists and needs engineering review, task breakdown, and validation checklists. Produces plan.md and spec.yaml.
+name: plan
+description: Transforms product requirements (idea.md) into technical implementation plans and validation checklists. Use when an idea.md exists and needs engineering review, task breakdown, and validation checklists. Produces plan.md and spec.yaml.
 argument-hint: "<plan directory or plan name>"
 ---
 
@@ -52,7 +52,7 @@ Detect the appropriate mode based on input:
 At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
 
 ```yaml
-skill: spec
+skill: plan
 step: "3.5"
 detail: "ADR checkpoint — waiting for user approval"
 next: "Present architecture decisions table to user via AskUserQuestion"
@@ -67,7 +67,7 @@ Update at every step transition and within review loops (include iteration count
 
 Initialize `status.yaml` at the plan root immediately — hooks depend on this file:
 ```yaml
-skill: spec
+skill: plan
 step: "1"
 detail: "Reading and internalizing requirements"
 next: "Dispatch Researcher, Architect, and Critic for technical deep dive"
@@ -104,7 +104,7 @@ Dispatch agents in parallel:
    - Challenge assumptions about the technical approach
    - Provide multi-perspective analysis (Executor, Stakeholder, Skeptic)
 
-After each agent returns, check its **Status** field first, then save its full output to `discussion/` as a markdown file (e.g., `discussion/architect-review.md`, `discussion/critic-assessment.md`). The agents themselves are read-only — you (the spec skill) handle all file writes.
+After each agent returns, check its **Status** field first, then save its full output to `discussion/` as a markdown file (e.g., `discussion/architect-review.md`, `discussion/critic-assessment.md`). The agents themselves are read-only — you (the plan skill) handle all file writes.
 
 **Status routing** (applies to ALL agent dispatches in this skill):
 - **DONE** / **DONE_WITH_CONCERNS**: Process the agent's output normally. For DONE_WITH_CONCERNS, log the concerns in `discussion/` and carry them into Open Questions.

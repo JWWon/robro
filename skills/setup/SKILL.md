@@ -19,7 +19,7 @@ You are configuring a project to work with the robro plugin. This skill manages 
 
 <Do_Not_Use_When>
 - User wants to start planning (use /robro:idea instead)
-- User wants to build (use /robro:build instead)
+- User wants to build (use /robro:do instead)
 </Do_Not_Use_When>
 
 ## Workflow

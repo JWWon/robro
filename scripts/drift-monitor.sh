@@ -61,7 +61,7 @@ if [ -n "$matched_spec" ]; then
   status_candidate="${plan_dir}/status.yaml"
   if [ -f "$status_candidate" ]; then
     build_skill=$(grep "^skill:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
-    if [ "$build_skill" = "build" ]; then
+    if [ "$build_skill" = "do" ]; then
       sprint=$(grep "^sprint:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
       phase=$(grep "^phase:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
       echo "Build sprint ${sprint}, ${phase} phase."

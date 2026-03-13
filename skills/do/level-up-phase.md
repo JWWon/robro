@@ -184,7 +184,7 @@ Append to build-progress.md:
 
 Update status.yaml:
 ```yaml
-skill: build
+skill: do
 sprint: {N}
 phase: converge
 step: "1"

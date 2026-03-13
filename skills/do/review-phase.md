@@ -89,7 +89,7 @@ Save this to `discussion/review-sprint-{N}.md`.
 
 Update status.yaml:
 ```yaml
-skill: build
+skill: do
 sprint: {N}
 phase: retro
 step: "1"

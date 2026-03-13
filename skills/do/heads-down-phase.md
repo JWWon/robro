@@ -200,7 +200,7 @@ After each level completes, append to `build-progress.md`:
 
 After all levels complete, update status.yaml:
 ```yaml
-skill: build
+skill: do
 sprint: {N}
 phase: review
 step: "1"

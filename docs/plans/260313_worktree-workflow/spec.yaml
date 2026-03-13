@@ -1,0 +1,500 @@
+meta:
+  id: "260313_worktree-workflow"
+  idea: idea.md
+  plan: plan.md
+  created: "2026-03-13T00:00:00Z"
+  updated: "2026-03-13T00:00:00Z"
+  ambiguity_score: 0.12
+  complexity: complex
+
+goal: "Refactor the robro pipeline to use git worktrees for branch isolation, rename skills for clarity (spec→plan, build→do), add complexity-driven agent model selection, and clean up YAML schemas — producing exactly one squash-merge commit per plan cycle on main."
+
+constraints:
+  - "Agent tool only exposes model parameter (haiku/sonnet/opus) — no thinking level control"
+  - "Three CLAUDE.md files must stay in sync (root, .claude/, setup template)"
+  - "Hook scripts parse status.yaml with grep+sed — schema must remain flat YAML"
+  - ".claude/worktrees/ must be gitignored"
+  - "EnterWorktree creates new worktrees only — cannot re-enter existing ones cross-session"
+  - "Researcher and retro-analyst capped at sonnet (never opus)"
+  - "Clean break — no backward compatibility migration for old plans"
+
+non_goals:
+  - "Automatic version tagging after merge"
+  - "Aliases for old skill names (/robro:spec, /robro:build)"
+  - "Changes to the 6-phase structure (Brief → Heads-down → Review → Retro → Level-up → Converge)"
+  - "Migration tooling for existing plans"
+
+context:
+  type: "brownfield"
+  tech_stack:
+    - "Shell (bash) — hook scripts"
+    - "Markdown — skill and agent definitions"
+    - "YAML — status.yaml, spec.yaml, model-config.yaml"
+    - "JSON — hooks.json, plugin.json"
+  existing_patterns:
+    - "Agent-level worktrees for parallel builder isolation (Path B in heads-down phase)"
+    - "Status.yaml drives all hook injection via grep+sed parsing"
+    - "Skills own interaction (AskUserQuestion); agents are workers"
+    - "Flat YAML schema — no nested structures"
+  key_files:
+    - "skills/spec/SKILL.md (becomes skills/plan/SKILL.md)"
+    - "skills/build/SKILL.md (becomes skills/do/SKILL.md)"
+    - "skills/build/converge-phase.md (becomes skills/do/converge-phase.md)"
+    - "hooks/hooks.json"
+    - "scripts/*.sh (all 8 hook scripts)"
+    - ".claude-plugin/plugin.json"
+    - "CLAUDE.md, .claude/CLAUDE.md, README.md"
+
+architecture_decisions:
+  - decision: "Merge approval in converge phase, not hook"
+    rationale: "Stop hooks can only return block/allow JSON. No PostStop event exists. Only skills can use AskUserQuestion."
+    alternatives: ["Post-stop hook (impossible)", "Separate /robro:merge skill"]
+  - decision: "EnterWorktree + git branch -m for worktree creation"
+    rationale: "EnterWorktree properly resets CWD-dependent caches. Branch rename gives desired plan/{slug} naming."
+    alternatives: ["git worktree add via Bash only", "Manual cd (incomplete cache reset)"]
+  - decision: "model-config.yaml at plugin root"
+    rationale: "Separates model selection from skill logic. Both shell scripts and skills can read it."
+    alternatives: ["Embed in plugin.json", "Per-agent frontmatter defaults", "Hardcoded in SKILL.md"]
+  - decision: "Single atomic commit for rename"
+    rationale: "27 files, ~100 references. Partial rename breaks hooks."
+    alternatives: ["Incremental rename by category"]
+  - decision: "Thinking level deferred (platform limitation)"
+    rationale: "Claude Code Agent tool only has model parameter. No thinking level/budget exists."
+    alternatives: ["Attempt undocumented parameters", "Wait for platform update"]
+  - decision: "Clean-memory replaced by converge-phase cleanup"
+    rationale: "Worktree lifecycle handles cleanup. Cross-plan analysis was low-value for pre-1.0."
+    alternatives: ["Keep alongside worktree", "Refactor to work with worktrees"]
+  - decision: "session-start.sh worktree scan for cross-session resume"
+    rationale: "Only session-start.sh needs worktree awareness. All other hooks work naturally via CWD when inside a worktree."
+    alternatives: ["Status.yaml pointer pattern (requires modifying all 8 hooks)", "Breadcrumb file in main repo"]
+
+sections:
+  - id: S1
+    name: "Skill Renaming"
+    description: "Rename spec→plan, build→do across all files"
+    requirements:
+      - "Pipeline becomes /robro:idea → /robro:plan → /robro:do"
+      - "All internal references updated consistently"
+  - id: S2
+    name: "Worktree Lifecycle"
+    description: "Plan-scoped worktree creation, file migration, cross-session resume"
+    requirements:
+      - "Worktree created at /robro:plan start via EnterWorktree"
+      - "Plan files copied from main to worktree"
+      - "Main working directory cleaned after migration"
+  - id: S3
+    name: "Complexity Tiers"
+    description: "3-tier complexity classification (light/standard/complex)"
+    requirements:
+      - "PM proposes in idea.md, plan confirms in spec.yaml"
+      - "Drives agent model selection during do"
+  - id: S4
+    name: "Model Configuration"
+    description: "Plugin-level model mapping per complexity tier"
+    requirements:
+      - "model-config.yaml at plugin root with 3 tiers"
+      - "Each tier maps agent roles to models (haiku/sonnet/opus)"
+      - "Researcher and retro-analyst capped at sonnet"
+  - id: S5
+    name: "Spec.yaml Complexity"
+    description: "spec.yaml gains complexity field in meta section"
+    requirements:
+      - "complexity field set by plan skill"
+      - "Read by do skill for model dispatch"
+  - id: S6
+    name: "Status.yaml Schema"
+    description: "Typed fields, integer steps, numeric ambiguity"
+    requirements:
+      - "No more quoted string steps or floating-point step numbers"
+      - "New fields: ambiguity, complexity, branch, worktree"
+      - "Remains flat YAML parseable by grep+sed"
+  - id: S7
+    name: "Cross-session Resume"
+    description: "Detect active worktree plans from main repo"
+    requirements:
+      - "session-start.sh scans .claude/worktrees/*/docs/plans/*/ as fallback"
+      - "Guides user to enter worktree for resume"
+  - id: S8
+    name: "Clean-memory Removal"
+    description: "Remove clean-memory skill, replaced by converge cleanup"
+    requirements:
+      - "skills/clean-memory/ deleted"
+      - "All references to clean-memory removed"
+  - id: S9
+    name: "Squash Merge"
+    description: "One squash-merge commit per plan cycle on main"
+    requirements:
+      - "git merge --squash plan/{slug} produces single commit"
+      - "Worktree and branch cleaned up after merge"
+  - id: S10
+    name: "Converge Merge Approval"
+    description: "User approval before squash merge via AskUserQuestion"
+    requirements:
+      - "Merge/Keep/Discard options presented"
+      - "Conflict handling: present to user, no auto-resolve"
+  - id: S11
+    name: "Plugin Version"
+    description: "Version bump to 0.1.1 with manual tagging instructions"
+    requirements:
+      - "plugin.json version = 0.1.1"
+      - "CLAUDE.md has versioning note"
+  - id: S12
+    name: "Thinking Level"
+    description: "Document platform limitation, defer implementation"
+    requirements:
+      - "Known Limitations section in CLAUDE.md"
+  - id: S13
+    name: "Documentation"
+    description: "All docs reflect new workflow, naming, and features"
+    requirements:
+      - "Root CLAUDE.md, .claude/CLAUDE.md, README.md all updated"
+      - "Worktree workflow documented"
+      - "Model config documented"
+
+checklist:
+  - id: C1
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "skills/spec/ directory renamed to skills/plan/ with updated frontmatter"
+    acceptance_criteria: "skills/plan/ directory exists with SKILL.md, plan-reviewer-prompt.md, and spec-reviewer-prompt.md. Frontmatter shows name: plan. skills/spec/ does not exist."
+    test_type: manual
+    test_plan: |
+      1. Run: head -3 skills/plan/SKILL.md
+      2. Verify output shows "name: plan"
+      3. Run: ls skills/plan/
+      4. Expected: SKILL.md, plan-reviewer-prompt.md, spec-reviewer-prompt.md
+      5. Run: test ! -d skills/spec && echo PASS
+      6. Expected: PASS
+    passes: false
+
+  - id: C2
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "skills/build/ directory renamed to skills/do/ with updated frontmatter"
+    acceptance_criteria: "skills/do/SKILL.md exists with name: do in frontmatter. skills/build/ does not exist. All 8 phase files present."
+    test_type: manual
+    test_plan: |
+      1. Run: head -3 skills/do/SKILL.md
+      2. Verify output shows "name: do"
+      3. Run: ls skills/do/ | wc -l
+      4. Expected: 8 files (SKILL.md + 6 phases + config-analysis-framework.md)
+      5. Run: test ! -d skills/build && echo PASS
+      6. Expected: PASS
+    passes: false
+
+  - id: C3
+    section: S1
+    phase: 1
+    task: "1.3"
+    description: "All internal references to /robro:spec and /robro:build updated to /robro:plan and /robro:do"
+    acceptance_criteria: "grep -r '/robro:spec' across skills/, scripts/, agents/, CLAUDE.md, .claude/CLAUDE.md, README.md returns no matches (excluding spec.yaml filename). grep -r '/robro:build' returns no matches."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -rn '/robro:spec' skills/ scripts/ agents/ CLAUDE.md .claude/CLAUDE.md README.md | grep -v 'spec.yaml'
+      2. Expected: no output (no matches)
+      3. Run: grep -rn '/robro:build' skills/ scripts/ agents/ CLAUDE.md .claude/CLAUDE.md README.md
+      4. Expected: no output (no matches)
+    passes: false
+
+  - id: C4
+    section: S1
+    phase: 1
+    task: "1.3"
+    description: "All 8 hook scripts reference 'plan' and 'do' instead of 'spec' and 'build' for skill names"
+    acceptance_criteria: "grep -rn '\"spec\"' scripts/ returns no matches (excluding comments about spec.yaml). grep -rn '\"build\"' scripts/ returns no matches. Hook scripts parse status.yaml skill field correctly for 'plan' and 'do'."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -rn '"spec"' scripts/ | grep -v 'spec.yaml' | grep -v '# '
+      2. Expected: no output
+      3. Run: grep -rn '"build"' scripts/
+      4. Expected: no output
+      5. Run: grep -n 'plan\|do' scripts/pipeline-guard.sh | head -5
+      6. Verify: shows 'plan)' and 'do)' case branches
+    passes: false
+
+  - id: C5
+    section: S2
+    phase: 2
+    task: "2.2"
+    description: "Plan skill creates worktree via EnterWorktree(name: slug) and renames branch to plan/{slug}"
+    acceptance_criteria: "skills/plan/SKILL.md contains Step 1.5 with EnterWorktree call and git branch -m command. File migration and main cleanup steps are documented."
+    test_type: manual
+    test_plan: |
+      1. Read skills/plan/SKILL.md
+      2. Verify Step 1.5 "Create Plan Worktree" section exists
+      3. Verify it contains: EnterWorktree(name: "{slug}")
+      4. Verify it contains: git branch -m plan/{slug}
+      5. Verify it contains file copy and main cleanup steps
+    passes: false
+
+  - id: C6
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: ".claude/worktrees/ is gitignored"
+    acceptance_criteria: ".gitignore contains a pattern that excludes .claude/worktrees/"
+    test_type: manual
+    test_plan: |
+      1. Run: grep 'worktrees' .gitignore
+      2. Expected: line showing .claude/worktrees/ or worktrees/ pattern
+    passes: false
+
+  - id: C7
+    section: S7
+    phase: 2
+    task: "2.3"
+    description: "session-start.sh detects active worktree plans for cross-session resume"
+    acceptance_criteria: "scripts/session-start.sh contains a fallback scan block that iterates .claude/worktrees/*/docs/plans/*/status.yaml and injects resume guidance."
+    test_type: manual
+    test_plan: |
+      1. Read scripts/session-start.sh
+      2. Verify it contains: .claude/worktrees (or WORKTREE_DIR)
+      3. Verify it scans worktree plan directories for status.yaml
+      4. Verify it outputs resume guidance with EnterWorktree suggestion
+      5. Run: bash -n scripts/session-start.sh (syntax check)
+      6. Expected: exit code 0
+    passes: false
+
+  - id: C8
+    section: S10
+    phase: 5
+    task: "5.1"
+    description: "Converge phase presents merge approval via AskUserQuestion with Merge/Keep/Discard options"
+    acceptance_criteria: "skills/do/converge-phase.md contains AskUserQuestion merge approval block with three options after convergence check passes."
+    test_type: manual
+    test_plan: |
+      1. Read skills/do/converge-phase.md
+      2. Verify "Convergence Reached" section contains AskUserQuestion
+      3. Verify three options: Merge, Keep, Discard
+      4. Verify merge summary includes: sprints, spec items, branch, commit count
+    passes: false
+
+  - id: C9
+    section: S9
+    phase: 5
+    task: "5.1"
+    description: "Squash merge flow: ExitWorktree → git merge --squash → commit → worktree remove → branch delete"
+    acceptance_criteria: "skills/do/converge-phase.md documents the complete merge sequence for the 'Merge' option, including ExitWorktree(keep), git merge --squash, git commit, git worktree remove, git branch -D."
+    test_type: manual
+    test_plan: |
+      1. Read skills/do/converge-phase.md Merge section
+      2. Verify sequence: ExitWorktree(action: "keep")
+      3. Verify: git merge --squash plan/{slug}
+      4. Verify: git commit with descriptive message
+      5. Verify: git worktree remove .claude/worktrees/{slug}
+      6. Verify: git branch -D plan/{slug}
+    passes: false
+
+  - id: C10
+    section: S4
+    phase: 3
+    task: "3.1"
+    description: "model-config.yaml exists at plugin root with 3 complexity tiers"
+    acceptance_criteria: "model-config.yaml contains tiers.light, tiers.standard, tiers.complex sections. Each tier maps agent roles (builder, reviewer, architect, critic, researcher, retro-analyst) to model values (haiku, sonnet, opus)."
+    test_type: manual
+    test_plan: |
+      1. Run: python3 -c "import yaml; d=yaml.safe_load(open('model-config.yaml')); assert set(d['tiers'].keys()) == {'light','standard','complex'}; print('PASS')"
+      2. Expected: PASS
+      3. Verify researcher and retro-analyst are never 'opus' in any tier
+    passes: false
+
+  - id: C11
+    section: S4
+    phase: 3
+    task: "3.1"
+    description: "Researcher and retro-analyst are capped at sonnet across all tiers"
+    acceptance_criteria: "In model-config.yaml, researcher and retro-analyst values are 'haiku' or 'sonnet' in all three tiers. Never 'opus'."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -A1 'researcher:' model-config.yaml
+      2. Verify: only haiku or sonnet values
+      3. Run: grep -A1 'retro-analyst:' model-config.yaml
+      4. Verify: only haiku or sonnet values
+    passes: false
+
+  - id: C12
+    section: S5
+    phase: 3
+    task: "3.2"
+    description: "spec.yaml schema includes complexity field in meta section"
+    acceptance_criteria: "skills/plan/SKILL.md spec.yaml template contains meta.complexity field with values light|standard|complex."
+    test_type: manual
+    test_plan: |
+      1. Read skills/plan/SKILL.md
+      2. Find spec.yaml template section
+      3. Verify meta section contains: complexity: "{light|standard|complex}"
+      4. Verify complexity assignment instructions exist
+    passes: false
+
+  - id: C13
+    section: S3
+    phase: 3
+    task: "3.3"
+    description: "Do skill Brief phase reads model-config.yaml and dispatches agents with tier-appropriate model"
+    acceptance_criteria: "skills/do/brief-phase.md contains a model config reading step. Agent dispatch examples in heads-down-phase.md and other phase files include model: parameter."
+    test_type: manual
+    test_plan: |
+      1. Read skills/do/brief-phase.md
+      2. Verify section "Load Model Configuration" exists
+      3. Verify it reads meta.complexity from spec.yaml
+      4. Verify it reads model-config.yaml
+      5. Read skills/do/heads-down-phase.md
+      6. Verify Agent() dispatches include model: parameter
+    passes: false
+
+  - id: C14
+    section: S6
+    phase: 4
+    task: "4.1"
+    description: "Status.yaml uses integer step numbers (no quoted strings, no floats)"
+    acceptance_criteria: "All status.yaml templates in skill files use unquoted integer values for step field. No instances of step: \"3.5\" or step: \"brief\" remain."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -rn 'step: "' skills/
+      2. Expected: no output (no quoted step values)
+      3. Run: grep -rn 'step:' skills/ | head -10
+      4. Verify: all step values are plain integers
+    passes: false
+
+  - id: C15
+    section: S6
+    phase: 4
+    task: "4.1"
+    description: "Status.yaml has new typed fields: ambiguity, complexity, branch, worktree"
+    acceptance_criteria: "Status.yaml templates across skill files include ambiguity (float), complexity (enum), branch (string), worktree (string) fields."
+    test_type: manual
+    test_plan: |
+      1. Read skills/idea/SKILL.md status.yaml templates
+      2. Verify ambiguity: field exists as numeric
+      3. Read skills/plan/SKILL.md status.yaml templates
+      4. Verify branch: and worktree: fields exist
+      5. Read skills/do/SKILL.md status.yaml templates
+      6. Verify complexity: field exists
+    passes: false
+
+  - id: C16
+    section: S8
+    phase: 1
+    task: "1.2"
+    description: "clean-memory skill removed and all references cleaned up"
+    acceptance_criteria: "skills/clean-memory/ directory does not exist. grep -r 'clean-memory' across skills/, scripts/, CLAUDE.md, .claude/CLAUDE.md, README.md returns no matches."
+    test_type: manual
+    test_plan: |
+      1. Run: test ! -d skills/clean-memory && echo PASS
+      2. Expected: PASS
+      3. Run: grep -rn 'clean-memory' skills/ CLAUDE.md .claude/CLAUDE.md README.md
+      4. Expected: no output
+    passes: false
+
+  - id: C17
+    section: S11
+    phase: 6
+    task: "1.7, 6.1"
+    description: "Plugin version bumped to 0.1.1 and keywords updated in plugin.json"
+    acceptance_criteria: ".claude-plugin/plugin.json contains \"version\": \"0.1.1\". Keywords array updated (no 'spec' or 'build'). Keywords done in Phase 1 Task 1.7, version bump in Phase 6 Task 6.1."
+    test_type: manual
+    test_plan: |
+      1. Run: grep '"version"' .claude-plugin/plugin.json
+      2. Expected: "version": "0.1.1"
+      3. Run: grep '"keywords"' .claude-plugin/plugin.json
+      4. Verify: no 'spec' or 'build' in keywords array
+    passes: false
+
+  - id: C18
+    section: S10
+    phase: 5
+    task: "5.1"
+    description: "ExitWorktree called with 'keep' action before squash merge (not 'remove' which deletes branch)"
+    acceptance_criteria: "skills/do/converge-phase.md merge flow uses ExitWorktree(action: 'keep'), not 'remove'."
+    test_type: manual
+    test_plan: |
+      1. Read skills/do/converge-phase.md merge section
+      2. Verify: ExitWorktree(action: "keep") appears in the Merge flow
+      3. Verify: ExitWorktree(action: "remove") does NOT appear in the Merge flow
+      4. Verify: ExitWorktree("discard") or similar only appears in the Discard flow
+    passes: false
+
+  - id: C19
+    section: S9
+    phase: 5
+    task: "5.1"
+    description: "Worktree and branch cleaned up after successful merge"
+    acceptance_criteria: "Converge phase merge flow includes git worktree remove and git branch -D commands after successful squash merge."
+    test_type: manual
+    test_plan: |
+      1. Read skills/do/converge-phase.md merge section
+      2. Verify: git worktree remove .claude/worktrees/{slug}
+      3. Verify: git branch -D plan/{slug}
+      4. Verify cleanup happens AFTER git merge --squash and git commit
+    passes: false
+
+  - id: C20
+    section: S12
+    phase: 6
+    task: "6.2"
+    description: "Thinking level limitation documented in CLAUDE.md"
+    acceptance_criteria: "Root CLAUDE.md contains a 'Known Limitations' section mentioning that Agent tool has no thinking level parameter."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -A3 'Known Limitations' CLAUDE.md
+      2. Expected: section mentions thinking level, model parameter only
+    passes: false
+
+  - id: C21
+    section: S13
+    phase: 6
+    task: "6.3"
+    description: "Worktree workflow documented in root CLAUDE.md"
+    acceptance_criteria: "Root CLAUDE.md contains a 'Worktree Workflow' section describing the plan-scoped worktree lifecycle (idea on main, plan creates worktree, do works in worktree, converge squash-merges)."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -A10 'Worktree Workflow' CLAUDE.md
+      2. Expected: section with 4-step lifecycle description
+      3. Verify: mentions EnterWorktree, plan/{slug} branch, squash merge
+    passes: false
+
+  - id: C22
+    section: S13
+    phase: 6
+    task: "6.3"
+    description: "Model configuration documented in root CLAUDE.md"
+    acceptance_criteria: "Root CLAUDE.md contains a 'Model Configuration' section describing model-config.yaml and the 3 complexity tiers."
+    test_type: manual
+    test_plan: |
+      1. Run: grep -A5 'Model Configuration' CLAUDE.md
+      2. Expected: section mentions model-config.yaml, light/standard/complex tiers
+    passes: false
+
+  - id: C23
+    section: S13
+    phase: 6
+    task: "6.3"
+    description: ".claude/CLAUDE.md updated with worktree and model config references"
+    acceptance_criteria: ".claude/CLAUDE.md contains worktree workflow summary and updated hooks table mentioning worktree detection."
+    test_type: manual
+    test_plan: |
+      1. Run: grep 'worktree' .claude/CLAUDE.md
+      2. Expected: at least 2 matches (workflow section + hooks table)
+      3. Run: grep '/robro:plan' .claude/CLAUDE.md
+      4. Expected: matches in skills table
+    passes: false
+
+  - id: C24
+    section: S13
+    phase: 6
+    task: "6.3"
+    description: "README.md updated with new skill names and worktree workflow"
+    acceptance_criteria: "README.md references /robro:plan and /robro:do (not /robro:spec or /robro:build). Contains worktree isolation description."
+    test_type: manual
+    test_plan: |
+      1. Run: grep '/robro:plan' README.md
+      2. Expected: matches
+      3. Run: grep '/robro:do' README.md
+      4. Expected: matches
+      5. Run: grep '/robro:spec' README.md
+      6. Expected: no matches
+      7. Run: grep 'worktree' README.md
+      8. Expected: at least 1 match
+    passes: false

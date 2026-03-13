@@ -85,7 +85,7 @@ gate: "ambiguity ≤ 0.1 AND user confirms requirements, criteria, approach"
 2. Check for `discussion/interview.md` — read the full Q&A log for context
 3. Check for `research/` files — these persist across sessions
 4. If `idea.md` exists with `status: draft`, offer to continue refining or rewrite
-5. If `idea.md` exists with `status: ready`, suggest running `/robro:spec` instead
+5. If `idea.md` exists with `status: ready`, suggest running `/robro:plan` instead
 
 Resume from the exact round and dimension where the previous session ended. Inform the user: "Resuming from round {N} (ambiguity: {score}). Last we discussed: {summary of last Q&A}."
 
@@ -403,7 +403,7 @@ Write `.bak.md` before overwriting an existing `idea.md`.
 After writing idea.md, suggest the next step:
 
 ```
-idea.md is ready (ambiguity: {score}). Next: run /robro:spec to generate the technical specification and implementation plan.
+idea.md is ready (ambiguity: {score}). Next: run /robro:plan to generate the technical implementation plan and validation checklist.
 ```
 
 If status is `draft`, suggest continuing the interview first before moving to spec.
