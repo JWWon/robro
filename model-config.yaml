@@ -3,8 +3,8 @@
 # Tiers: light (fast/cheap), standard (balanced), complex (thorough)
 #
 # Agent tool model values: haiku, sonnet, opus
-# Researcher and retro-analyst are capped at sonnet (never opus)
-# -- they gather/summarize, they don't make architectural decisions
+# Researcher, retro-analyst, and conflict-resolver are capped at sonnet (never opus)
+# -- they gather/summarize/merge, they don't make architectural decisions
 
 tiers:
   light:
@@ -15,6 +15,7 @@ tiers:
     critic: sonnet
     researcher: haiku
     retro-analyst: haiku
+    conflict-resolver: haiku
   standard:
     default: sonnet
     builder: sonnet
@@ -23,6 +24,7 @@ tiers:
     critic: opus
     researcher: sonnet
     retro-analyst: sonnet
+    conflict-resolver: sonnet
   complex:
     default: opus
     builder: opus
@@ -31,3 +33,4 @@ tiers:
     critic: opus
     researcher: sonnet
     retro-analyst: sonnet
+    conflict-resolver: sonnet

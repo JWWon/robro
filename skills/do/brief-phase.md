@@ -44,6 +44,7 @@ Read the complexity tier and load model mappings for agent dispatch:
      critic: {model}
      researcher: {model}
      retro-analyst: {model}
+     conflict-resolver: {model}
    ```
 5. Log to build-progress.md: "Sprint {N}: Using {tier} complexity tier ({model} for builder, {model} for reviewer, ...)"
 
@@ -70,9 +71,10 @@ Log removals to build-progress.md.
 
 On the very first sprint, dispatch the **Researcher** agent for comprehensive brownfield detection:
 
-Provide the Researcher with:
 ```
-Perform a comprehensive brownfield scan of this project. I need:
+Agent(
+  subagent_type: "robro:researcher",
+  prompt: "Perform a comprehensive brownfield scan of this project. I need:
 1. Tech stack: languages, frameworks, libraries with exact versions
 2. Build/test/lint commands: How to build, test, lint, and typecheck this project
 3. Existing conventions: naming patterns, file organization, error handling, logging
@@ -81,7 +83,9 @@ Perform a comprehensive brownfield scan of this project. I need:
 6. Recent git activity: active branches, recent commit patterns
 7. Dependencies: key external libraries and their current versions
 
-Write findings to: {plan_dir}/research/brownfield-scan.md
+Write findings to: {plan_dir}/research/brownfield-scan.md",
+  model: "{MODEL_CONFIG.researcher}"
+)
 ```
 
 Wait for Researcher status. Route per status protocol (DONE/NEEDS_CONTEXT/BLOCKED).

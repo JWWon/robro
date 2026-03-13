@@ -39,7 +39,6 @@ Detect the appropriate mode based on input:
 
 - **Standard mode** (default): Full pipeline — research → architect review → critic scoring → planning → spec generation → cross-validation → final review
 - **Direct mode** (if `$ARGUMENTS` contains `--direct`): Skip extended research, generate plan and spec directly. Use when requirements are already very clear.
-- **Review mode** (if `$ARGUMENTS` contains `--review`): Review an existing plan.md + spec.yaml for quality. Dispatch Critic, return verdict only.
 
 ## Prerequisites
 

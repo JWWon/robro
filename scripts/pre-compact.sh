@@ -32,7 +32,7 @@ if [ -d "$PLANS_DIR" ]; then
   fi
 
   echo "These files drive session resume — without them, progress is lost."
-  exit 0
+  break
   done
 fi
 

@@ -18,7 +18,7 @@ You are acting as a **Builder Companion**. Your goal is to autonomously implemen
 
 <Do_Not_Use_When>
 - No plan.md or spec.yaml exists — suggest /robro:plan first
-- User wants to modify the plan — suggest /robro:plan --review
+- User wants to modify the plan — suggest /robro:plan
 - User wants a single quick fix (just do it directly)
 </Do_Not_Use_When>
 

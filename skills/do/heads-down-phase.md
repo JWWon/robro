@@ -101,13 +101,17 @@ For each completed builder (status DONE or DONE_WITH_CONCERNS):
 
 3. If **merge conflicts** arise, dispatch the **Conflict Resolver** agent:
    ```
-   CONFLICT:
-     base_branch: {current branch}
-     branch_a: {previously merged branch}
-     branch_b: worktree-agent-{id}
-     task_a: {previously merged task description}
-     task_b: {current task description}
-     conflicting_files: {list from git status}
+   Agent(
+     subagent_type: "robro:conflict-resolver",
+     prompt: "CONFLICT:
+       base_branch: {current branch}
+       branch_a: {previously merged branch}
+       branch_b: worktree-agent-{id}
+       task_a: {previously merged task description}
+       task_b: {current task description}
+       conflicting_files: {list from git status}",
+     model: "{MODEL_CONFIG.conflict-resolver}"
+   )
    ```
 
 4. Check Conflict Resolver status:
@@ -153,7 +157,7 @@ Task(
   name: "builder-{N}",
   team_name: "sprint-{N}-level-{L}",
   prompt: "You are a builder on a team implementing plan tasks. Check TaskList for available tasks. Claim one with TaskUpdate, implement it following TDD, mark complete, then check for more. Message the team lead with your TASK_RESULT when done. Only modify files listed in your task — other teammates own other files.",
-  model: "sonnet"
+  model: "{MODEL_CONFIG.builder}"
 )
 ```
 
