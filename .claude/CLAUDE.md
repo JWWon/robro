@@ -77,6 +77,7 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 | `/robro:build` | Builder | Autonomously implements plan.md through evolutionary sprint cycles. Dispatches builder agents, runs peer review, evolves project knowledge. |
 | `/robro:setup` | Setup | Configures project for robro: CLAUDE.md section, MCP/skill recommendations, .gitignore rules. |
 | `/robro:clean-memory` | Cleanup | Analyzes completed plans for patterns, recommends improvements, then deletes confirmed plans. |
+| `/robro:tune` | Configuration | Audits and optimizes project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs). Codebase + git history analysis. |
 
 ### Plan Artifacts
 
