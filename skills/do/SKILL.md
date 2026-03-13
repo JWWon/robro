@@ -127,22 +127,14 @@ Summary:
 Read `skills/do/converge-phase.md` for detailed instructions.
 
 Summary:
-Run 5-gate convergence check:
-1. **Review gate**: All items passed 3-stage review
-2. **Completeness gate**: Every non-superseded item has `passes: true`
-3. **Regression gate**: No previously-passing items regressed to `false`
-4. **Growth gate**: Spec evolved OR 2 consecutive retros with no actionable findings (D6)
-5. **Confidence gate**: No skipped or failed validation steps
-
-Pathology detection:
-- **Spinning**: 3+ similar errors across sprints — try alternative approach
-- **Oscillation**: Contradictory changes — step back, find third way
-- **Stagnation**: No mutations for 3 sprints — if similarity >= 0.95 declare convergence, else force fresh approach
-
-Hard cap: 30 sprints (D11).
-
-If converged: set `skill: none`, log final summary to build-progress.md.
-If not converged: persist state, update status.yaml for next sprint. The stop hook auto-continues.
+- Run 5-gate convergence check (Review, Completeness, Regression, Growth, Confidence)
+- Detect pathologies (Spinning, Oscillation, Stagnation)
+- If converged: present merge summary to user via AskUserQuestion
+  - "Merge": ExitWorktree, squash merge to main, delete worktree/branch
+  - "Keep": Stay in worktree for manual review
+  - "Discard": Delete worktree/branch without merging
+- If not converged: prepare next sprint, continue
+- Sprint hard cap at 30 also triggers merge decision
 
 ## Cross-Session Resume
 
