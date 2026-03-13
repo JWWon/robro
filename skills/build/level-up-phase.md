@@ -120,6 +120,14 @@ description: {when and why to use this skill}
 - {Convention or constraint}
 ```
 
+**REMOVE** — If the proposal operation is REMOVE (stale or redundant configuration):
+1. Verify the target file exists at the specified path
+2. Read the file to confirm it matches the described identity (name, type, purpose)
+3. Log the file's full content to build-progress.md (enables rollback if needed)
+4. Delete the file
+5. If the file was a skill directory (`SKILL.md` + supporting files), remove the entire directory
+6. Log the removal: `REMOVED: {path} — {reason}`
+
 ### 4. Quality Gate (D7)
 
 For every file created or updated:
@@ -155,6 +163,11 @@ sprint_2:
     path: ".claude/skills/drizzle-migration/SKILL.md"
     description: "Formalized Drizzle migration procedure"
     timestamp: "2026-03-14T10:20:00Z"
+  - action: REMOVE
+    path: ".claude/rules/legacy-api-wrapper.md"
+    previous_content: "{full content of deleted file}"
+    reason: "Rule superseded by error-handling agent; no longer referenced"
+    timestamp: "2026-03-14T10:25:00Z"
 ```
 
 This manifest enables rollback if created files cause issues.
@@ -165,8 +178,8 @@ Append to build-progress.md:
 ```markdown
 ## Sprint {N} — Level-up — {timestamp}
 - Mutations applied: {count} (ADD: {n}, SUPERSEDE: {n}, FLIP: {n})
-- Level-ups: {count} (agent: {n}, skill: {n}, rule: {n})
-- Files: {list of created/updated paths}
+- Level-ups: {count} (agent: {n}, skill: {n}, rule: {n}, removed: {n})
+- Files: {list of created/updated/removed paths}
 ```
 
 Update status.yaml:
