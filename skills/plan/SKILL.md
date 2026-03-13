@@ -53,7 +53,10 @@ At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/Y
 
 ```yaml
 skill: plan
-step: "3.5"
+step: 4
+complexity: ""
+branch: ""
+worktree: ""
 detail: "ADR checkpoint — waiting for user approval"
 next: "Present architecture decisions table to user via AskUserQuestion"
 gate: "User approves ADR before plan generation"
@@ -68,7 +71,10 @@ Update at every step transition and within review loops (include iteration count
 Initialize `status.yaml` at the plan root immediately — hooks depend on this file:
 ```yaml
 skill: plan
-step: "1"
+step: 1
+complexity: ""
+branch: ""
+worktree: ""
 detail: "Reading and internalizing requirements"
 next: "Dispatch Researcher, Architect, and Critic for technical deep dive"
 gate: "Architect APPROVED + Critic PASS, user approves ADR and plan"
@@ -115,6 +121,7 @@ Create an isolated worktree for all plan and implementation work. This keeps mai
    ```yaml
    skill: plan
    step: 2
+   complexity: ""
    branch: plan/{slug}
    worktree: .claude/worktrees/{slug}
    detail: "Worktree created, starting technical deep dive"

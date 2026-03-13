@@ -76,9 +76,15 @@ Append retro summary to build-progress.md:
 Update status.yaml:
 ```yaml
 skill: do
+step: 1
 sprint: {N}
 phase: level-up
-step: "1"
+complexity: standard
+branch: plan/{slug}
+worktree: .claude/worktrees/{slug}
 detail: "Applying spec mutations and project evolution"
 next: "Apply proposed mutations, then execute 5-step level-up flow"
+gate: "All 5 convergence gates pass"
+attempt: 1
+reinforcement_count: 0
 ```

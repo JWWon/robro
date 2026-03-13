@@ -42,9 +42,12 @@ At every phase transition and within phases, update `{plan_dir}/status.yaml`:
 
 ```yaml
 skill: do
-step: "brief"
+step: 1
 sprint: 1
 phase: brief
+complexity: standard
+branch: plan/{slug}
+worktree: .claude/worktrees/{slug}
 detail: "Gathering context, planning parallel levels"
 next: "Dispatch researcher pre-flight, scan project rules"
 gate: "All 5 convergence gates pass"

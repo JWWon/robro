@@ -14,11 +14,17 @@ The Brief phase prepares the sprint. It gathers context, identifies what needs t
 Update status.yaml:
 ```yaml
 skill: do
+step: 1
 sprint: {N}
 phase: brief
-step: "1"
+complexity: standard
+branch: plan/{slug}
+worktree: .claude/worktrees/{slug}
 detail: "Reading current state"
 next: "Identify remaining items and plan sprint scope"
+gate: "All 5 convergence gates pass"
+attempt: 1
+reinforcement_count: 0
 ```
 
 ### 1.1. Load Model Configuration
@@ -157,11 +163,17 @@ echo "0" > "{plan_dir}/discussion/.stop-hook-counter"
 Update status.yaml:
 ```yaml
 skill: do
+step: 1
 sprint: {N}
 phase: heads-down
-step: "1"
+complexity: standard
+branch: plan/{slug}
+worktree: .claude/worktrees/{slug}
 detail: "Starting Level 1 execution"
 next: "Dispatch builder agents for Level 1 tasks"
+gate: "All 5 convergence gates pass"
+attempt: 1
+reinforcement_count: 0
 ```
 
 Log transition to build-progress.md: "Brief complete. Starting Heads-down."

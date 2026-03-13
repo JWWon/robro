@@ -203,11 +203,17 @@ After each level completes, append to `build-progress.md`:
 After all levels complete, update status.yaml:
 ```yaml
 skill: do
+step: 1
 sprint: {N}
 phase: review
-step: "1"
+complexity: standard
+branch: plan/{slug}
+worktree: .claude/worktrees/{slug}
 detail: "Starting 3-stage review pipeline"
 next: "Run mechanical verification first"
+gate: "All 5 convergence gates pass"
+attempt: 1
+reinforcement_count: 0
 ```
 
 Log transition to build-progress.md: "Heads-down complete. Starting Review."

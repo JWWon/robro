@@ -185,9 +185,15 @@ Append to build-progress.md:
 Update status.yaml:
 ```yaml
 skill: do
+step: 1
 sprint: {N}
 phase: converge
-step: "1"
+complexity: standard
+branch: plan/{slug}
+worktree: .claude/worktrees/{slug}
 detail: "Running convergence checks"
 next: "Evaluate 5 convergence gates and pathology detection"
+gate: "All 5 convergence gates pass"
+attempt: 1
+reinforcement_count: 0
 ```

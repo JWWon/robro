@@ -42,7 +42,11 @@ At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/Y
 
 ```yaml
 skill: idea
-step: "3"
+step: 3
+ambiguity: 0.25
+complexity: ""
+branch: ""
+worktree: ""
 detail: "Round 7, targeting constraints (ambiguity: 0.25)"
 next: "Ask about scalability limits — user mentioned this but hasn't defined bounds"
 gate: "ambiguity ≤ 0.1 AND user confirms requirements, criteria, approach"
@@ -67,7 +71,11 @@ Where `{slug}` is a short kebab-case name derived from `$ARGUMENTS` (e.g., `2603
 Initialize `status.yaml` at the plan root immediately — hooks depend on this file from the first round:
 ```yaml
 skill: idea
-step: "0"
+step: 0
+ambiguity: 0.0
+complexity: ""
+branch: ""
+worktree: ""
 detail: "Initializing plan directory"
 next: "Classify type and scan codebase"
 gate: "ambiguity ≤ 0.1 AND user confirms requirements, criteria, approach"

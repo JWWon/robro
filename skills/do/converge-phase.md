@@ -81,10 +81,17 @@ If all 5 gates pass:
 2. Set status.yaml:
    ```yaml
    skill: none
+   step: 0
    sprint: {N}
    phase: done
+   complexity: standard
+   branch: plan/{slug}
+   worktree: .claude/worktrees/{slug}
    detail: "Converged — all gates passed"
    next: "Build complete"
+   gate: ""
+   attempt: 1
+   reinforcement_count: 0
    ```
 
 3. Append final summary to build-progress.md:
@@ -108,11 +115,17 @@ If any gate fails and no hard cap reached:
 3. Update status.yaml for the next sprint:
    ```yaml
    skill: do
+   step: 0
    sprint: {N+1}
    phase: brief
-   step: "0"
+   complexity: standard
+   branch: plan/{slug}
+   worktree: .claude/worktrees/{slug}
    detail: "Preparing sprint {N+1}"
    next: "Begin Brief phase — gather context and plan"
+   gate: "All 5 convergence gates pass"
+   attempt: 1
+   reinforcement_count: 0
    ```
 
 4. Log to build-progress.md: "Sprint {N} complete. {remaining} items left. Continuing..."
