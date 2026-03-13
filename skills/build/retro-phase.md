@@ -15,6 +15,8 @@ Collect inputs for the retro-analyst agent:
 
 ### 2. Dispatch Retro-Analyst Agent
 
+Before dispatching, read `skills/build/config-analysis-framework.md` and include its full content as CONFIG_ANALYSIS_FRAMEWORK in the payload.
+
 Dispatch the **Retro Analyst** agent with:
 
 ```
@@ -32,7 +34,13 @@ PROJECT_SETUP:
   agents: {list of existing .claude/agents/}
   skills: {list of existing .claude/skills/}
   rules: {summary of CLAUDE.md and .claude/ rules}
+CONFIG_BASELINE:
+  {structured baseline from brief phase with per-task relevance annotations}
+CONFIG_ANALYSIS_FRAMEWORK:
+  {full content of config-analysis-framework.md}
 ```
+
+If CONFIG_BASELINE is not available in context (e.g., after context compression), read it from build-progress.md where the brief phase logged the annotated baseline.
 
 ### 3. Process Retro Output
 
@@ -49,6 +57,7 @@ From the retro report, extract:
 2. **Proposed Level-ups**: These go to Level-up for project file creation/update
 3. **Broken Assumptions**: These inform the next sprint's Brief phase
 4. **Knowledge Gaps**: These inform the next sprint's JIT knowledge gathering
+5. **Configuration Suggestions**: Extract config effectiveness suggestions (Operation/Type/Target/Evidence/Proposed Action format) from the retro report's Configuration Effectiveness section and route them alongside Proposed Level-ups for level-up processing. Level-up handles ADD/UPDATE/REMOVE operations uniformly.
 
 ### 5. Log to Build-Progress
 
