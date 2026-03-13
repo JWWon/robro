@@ -77,6 +77,22 @@ ls "$PROJECT_ROOT/.claude/rules/" 2>/dev/null
 
 Incorporate any relevant conventions, patterns, or domain knowledge into the sprint context.
 
+#### 3b. Produce Structured Configuration Baseline
+
+After scanning `.claude/` files, produce a `CONFIG_BASELINE` structure capturing each configuration item's name, path, and coverage:
+
+- For each agent in `.claude/agents/`: name, path, one-line coverage summary
+- For each skill in `.claude/skills/`: name, path, one-line coverage summary
+- For each rule in `.claude/rules/`: name, path, one-line coverage summary
+- For each section in project CLAUDE.md: section heading, one-line coverage summary
+- For each configured MCP in `.mcp.json`: name, one-line coverage summary
+
+Example coverage summary: "github.md: commit conventions, branch workflow, gh CLI usage"
+
+Read `skills/build/config-analysis-framework.md` for the full baseline format specification (CONFIG_BASELINE structure with `relevant_tasks` fields).
+
+Store this baseline for use in step 5 (execution trace annotation) and later injection into the retro dispatch payload.
+
 ### 4. Identify Knowledge Gaps & Fetch JIT Knowledge
 
 For each remaining task this sprint:
