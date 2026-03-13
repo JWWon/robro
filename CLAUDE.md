@@ -136,6 +136,27 @@ Each plan lives in `docs/plans/YYMMDD_{name}/`:
 - **`build-progress.md`** — In discussion/. Append-only implementation log with learnings, patterns, failures. Injected into agent context on session resume.
 - **`*.bak.*`** — Gitignored. Previous versions preserved before overwrites.
 
+### Worktree Workflow
+
+Each plan cycle uses a git worktree for branch isolation:
+
+1. `/robro:idea` works on **main** (creates `docs/plans/{slug}/`, makes no commits)
+2. `/robro:plan` creates a worktree at `.claude/worktrees/{slug}/` via `EnterWorktree`, copies plan files, and works on branch `plan/{slug}`
+3. `/robro:do` works inside the worktree, commits freely to the plan branch
+4. Converge phase: after all gates pass, user approves squash merge to main
+
+Result: exactly one squash-merge commit per plan cycle on main. Clean git history.
+
+Cross-session resume: If a session starts from main while a worktree is active, `session-start.sh` detects it and prompts `EnterWorktree(name: "{slug}")`.
+
+### Model Configuration
+
+`model-config.yaml` at plugin root defines 3 complexity tiers (light/standard/complex) mapping agent roles to models (haiku/sonnet/opus). The do skill reads complexity from spec.yaml and dispatches agents with the appropriate model.
+
+### Known Limitations
+
+- **Thinking level control**: The Claude Code Agent tool only exposes a `model` parameter (haiku/sonnet/opus). There is no thinking level or thinking budget parameter. Model selection is the only available compute control for agent dispatch. This is a platform limitation as of 2026-03.
+
 ### Spec Mutation Rules (Build Phase)
 
 During `/robro:do`, spec.yaml evolves through restricted mutations:
@@ -180,3 +201,7 @@ claude --debug
 - Version with semver. Users won't see changes unless version is bumped.
 - Submit to official marketplace at claude.ai/settings/plugins/submit or platform.claude.com/plugins/submit.
 - Install scopes: `user` (default, global), `project` (shared via VCS), `local` (gitignored).
+
+### Versioning
+
+Version follows semver in `.claude-plugin/plugin.json`. Bump the version when releasing changes to installed users. After squash merge to main, create a tag: `git tag v{version} && git push origin v{version}`.

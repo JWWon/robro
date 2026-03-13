@@ -81,6 +81,8 @@ Robro operates through a 3-stage pipeline, each driven by a dedicated skill:
 
 The planning phase is the foundation. No code gets written until the idea has low ambiguity, the plan passes automated review, and the spec cross-validates against both.
 
+Each plan cycle runs in a git worktree for branch isolation, producing exactly one squash-merge commit on main. See [Worktree isolation](#worktree-isolation) below.
+
 ---
 
 ## Skills
@@ -162,6 +164,17 @@ Each plan lives in `docs/plans/YYMMDD_{name}/`:
 - **Multi-agent review** -- Plans are reviewed by Architect and Critic agents in iterative loops until they pass. No arbitrary iteration caps -- loops exit on passing verdicts.
 - **Spec immutability** -- During build, checklist items can never be deleted or silently modified. Changes use ADD or SUPERSEDE operations, logged to an append-only audit trail.
 - **3-stage peer review** -- Build output goes through mechanical checks ($0 LLM cost), semantic review, and multi-agent consensus.
+
+### Worktree isolation
+
+Robro uses git worktrees to keep plan branches isolated from main:
+
+1. `/robro:idea` works on **main** (creates plan directory, no commits)
+2. `/robro:plan` creates a worktree at `.claude/worktrees/{slug}/` and works on branch `plan/{slug}`
+3. `/robro:do` works inside the worktree, committing freely to the plan branch
+4. The converge phase squash-merges to main after all gates pass
+
+Result: exactly one clean commit per plan cycle on main. If a session starts while a worktree is active, robro auto-detects it and prompts re-entry.
 
 ---
 
