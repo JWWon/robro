@@ -113,7 +113,8 @@ Analyze the File Map from the Brief and task dependencies:
    - **Inline**: All tasks reference the same plan.md section, each task touches ≤3 files, AND no file overlaps between tasks in the level.
    - **Isolated**: Tasks have file overlaps between them, OR any single task touches >3 files.
    - **Teams**: Tasks span 3+ different plan.md sections or fundamentally different subsystems.
-4. Record the level plan with execution path in build-progress.md
+4. **Execution trace annotation**: Cross-reference each task in the sprint scope against CONFIG_BASELINE items. For each baseline item (agent, skill, rule, CLAUDE.md section, MCP), annotate its `relevant_tasks` field with task IDs where that item's domain applies. For example: "github.md rule → relevant to tasks 2.1, 2.3" or "auth-specialist agent → relevant to task 3.1". This piggybacks on the task analysis already being done — no separate pass needed.
+5. Record the level plan with execution path in build-progress.md. Include the annotated CONFIG_BASELINE with relevant_tasks fields.
 
 Example level structure:
 ```
