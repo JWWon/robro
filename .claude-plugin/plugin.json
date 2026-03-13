@@ -1,13 +1,12 @@
 {
   "name": "robro",
   "description": "Claude code plugin that transforms simple agent into your project companion",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": {
     "name": "JWWon"
   },
   "license": "MIT",
   "repository": "https://github.com/JWWon/robro",
   "homepage": "https://github.com/JWWon/robro",
-  "keywords": ["planning", "plan", "requirements", "idea", "do", "implementation"],
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["planning", "plan", "requirements", "idea", "do", "implementation"]
 }
