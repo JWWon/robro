@@ -17,7 +17,7 @@ Collect inputs for the retro-analyst agent:
 
 Before dispatching, read `skills/do/config-analysis-framework.md` and include its full content as CONFIG_ANALYSIS_FRAMEWORK in the payload.
 
-Dispatch the **Retro Analyst** agent with:
+Dispatch the **Retro Analyst** agent with `model: "{MODEL_CONFIG.retro-analyst}"`:
 
 ```
 SPRINT: {N}

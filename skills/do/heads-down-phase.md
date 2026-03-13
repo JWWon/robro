@@ -16,6 +16,7 @@ For each task in the level, dispatch a **Builder** agent via the Agent tool **wi
 Agent(
   subagent_type: "robro:builder",
   prompt: "<builder context below>",
+  model: "{MODEL_CONFIG.builder}",
   run_in_background: true
 )
 ```
@@ -70,6 +71,7 @@ For each task, dispatch a **Builder** agent WITH the `isolation: "worktree"` par
 Agent(
   subagent_type: "robro:builder",
   prompt: "<builder context>",
+  model: "{MODEL_CONFIG.builder}",
   isolation: "worktree",
   run_in_background: true
 )

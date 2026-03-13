@@ -6,7 +6,7 @@ The Review phase validates implementation quality through a 3-stage pipeline: me
 
 ### 1. Dispatch Reviewer Agent
 
-Dispatch the **Reviewer** agent with:
+Dispatch the **Reviewer** agent with `model: "{MODEL_CONFIG.reviewer}"`:
 
 ```
 SPRINT: {N}
@@ -48,7 +48,7 @@ If Stage 2 (semantic) completes:
 
 If any items are AMBIGUOUS after semantic review:
 
-Dispatch **Architect** and **Critic** agents in parallel, each reviewing the ambiguous items:
+Dispatch **Architect** (with `model: "{MODEL_CONFIG.architect}"`) and **Critic** (with `model: "{MODEL_CONFIG.critic}"`) agents in parallel, each reviewing the ambiguous items:
 
 For Architect:
 ```

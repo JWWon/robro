@@ -21,6 +21,28 @@ detail: "Reading current state"
 next: "Identify remaining items and plan sprint scope"
 ```
 
+### 1.1. Load Model Configuration
+
+Read the complexity tier and load model mappings for agent dispatch:
+
+1. Read `meta.complexity` from spec.yaml. Expected values: `light`, `standard`, `complex`. Default to `standard` if missing.
+2. Read `${CLAUDE_PLUGIN_ROOT}/model-config.yaml` to load the tier definitions.
+3. Select the tier matching the complexity value.
+4. Store the model mapping for use in all subsequent agent dispatches this sprint:
+   ```
+   MODEL_CONFIG:
+     complexity: {tier name}
+     builder: {model}
+     reviewer: {model}
+     architect: {model}
+     critic: {model}
+     researcher: {model}
+     retro-analyst: {model}
+   ```
+5. Log to build-progress.md: "Sprint {N}: Using {tier} complexity tier ({model} for builder, {model} for reviewer, ...)"
+
+For every Agent() dispatch in Heads-down, Review, Retro, and Level-up phases, include `model: "{model from MODEL_CONFIG}"` based on the agent type being dispatched.
+
 ### 1.5. Clean Stale Worktrees
 
 Remove any worktrees and branches left over from previous sprints or crashed sessions:
