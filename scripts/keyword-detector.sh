@@ -36,6 +36,10 @@ case "$PROMPT_LOWER" in
     echo "Suggestion: Use /robro:build to start autonomous implementation of the plan."
     exit 0
     ;;
+  *"robro tune"*|*"robro:tune"*)
+    echo "Suggestion: Use /robro:tune to audit and optimize your project's Claude Code configuration."
+    exit 0
+    ;;
 esac
 
 # Tier 2: Natural language triggers for /robro:idea
@@ -102,6 +106,25 @@ for pattern in "${spec_patterns[@]}"; do
         echo "No idea.md found. Consider running /robro:idea first to define requirements, then /robro:spec for the technical plan."
       fi
     fi
+    exit 0
+  fi
+done
+
+# Tier 2.7: Natural language triggers for /robro:tune
+tune_patterns=(
+  "audit config"
+  "review config"
+  "optimize setup"
+  "tune setup"
+  "check my setup"
+  "improve config"
+  "configuration audit"
+  "check configuration"
+)
+
+for pattern in "${tune_patterns[@]}"; do
+  if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
+    echo "Consider using /robro:tune to audit your project's Claude Code configuration for gaps and improvements."
     exit 0
   fi
 done
