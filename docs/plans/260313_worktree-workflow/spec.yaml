@@ -400,7 +400,7 @@ checklist:
       2. Expected: "version": "0.1.1"
       3. Run: grep '"keywords"' .claude-plugin/plugin.json
       4. Verify: no 'spec' or 'build' in keywords array
-    passes: false
+    passes: true
 
   - id: C18
     section: S10
@@ -440,7 +440,7 @@ checklist:
     test_plan: |
       1. Run: grep -A3 'Known Limitations' CLAUDE.md
       2. Expected: section mentions thinking level, model parameter only
-    passes: false
+    passes: true
 
   - id: C21
     section: S13
@@ -453,7 +453,7 @@ checklist:
       1. Run: grep -A10 'Worktree Workflow' CLAUDE.md
       2. Expected: section with 4-step lifecycle description
       3. Verify: mentions EnterWorktree, plan/{slug} branch, squash merge
-    passes: false
+    passes: true
 
   - id: C22
     section: S13
@@ -465,7 +465,7 @@ checklist:
     test_plan: |
       1. Run: grep -A5 'Model Configuration' CLAUDE.md
       2. Expected: section mentions model-config.yaml, light/standard/complex tiers
-    passes: false
+    passes: true
 
   - id: C23
     section: S13
@@ -479,7 +479,7 @@ checklist:
       2. Expected: at least 2 matches (workflow section + hooks table)
       3. Run: grep '/robro:plan' .claude/CLAUDE.md
       4. Expected: matches in skills table
-    passes: false
+    passes: true
 
   - id: C24
     section: S13
@@ -497,7 +497,7 @@ checklist:
       6. Expected: no matches
       7. Run: grep 'worktree' README.md
       8. Expected: at least 1 match
-    passes: false
+    passes: true
 
   - id: C25
     section: S8

@@ -18,3 +18,9 @@
 2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C9	passes:true	REASON: Squash merge flow documented: ExitWorktree(keep) → git merge --squash → commit → worktree remove → branch -D
 2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C18	passes:true	REASON: ExitWorktree(action: "keep") used before squash merge, no "remove" action in merge flow
 2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C19	passes:true	REASON: git worktree remove and git branch -D after successful squash merge
+2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C17	passes:true	REASON: plugin.json version bumped to 0.1.1, keywords clean
+2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C20	passes:true	REASON: Known Limitations section with thinking level note in CLAUDE.md
+2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C21	passes:true	REASON: Worktree Workflow section in CLAUDE.md with 4-step lifecycle
+2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C22	passes:true	REASON: Model Configuration section in CLAUDE.md with 3 tiers
+2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C23	passes:true	REASON: .claude/CLAUDE.md updated with worktree summary and hooks table
+2026-03-13T00:00:00Z	SPRINT:3	FLIP	checklist.C24	passes:true	REASON: README.md updated with /robro:plan, /robro:do, worktree isolation
