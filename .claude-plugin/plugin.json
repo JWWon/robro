@@ -1,7 +1,7 @@
 {
   "name": "robro",
   "description": "Claude code plugin that transforms simple agent into your project companion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "JWWon"
   },
