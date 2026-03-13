@@ -80,6 +80,7 @@ robro/
 │   │   ├── level-up-phase.md
 │   │   └── converge-phase.md
 │   ├── setup/SKILL.md       # Project configuration
+│   ├── tune/SKILL.md        # Configuration audit & optimization
 │   └── clean-memory/SKILL.md # Completed plan cleanup
 ├── agents/                  # Subagent markdown definitions
 │   ├── researcher.md        # Web + codebase exploration (idea, spec, build)
@@ -121,6 +122,7 @@ robro/
 - **`/robro:idea`** — Product Manager role. Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring with a ≤ 0.1 threshold gate.
 - **`/robro:spec`** — Engineering Manager role. Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness.
 - **`/robro:build`** — Builder role. Autonomously implements plan.md through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Uses stop hook auto-continue for multi-session chaining. Produces working code with all spec.yaml items flipped to `passes: true`.
+- **`/robro:tune`** — Configuration auditor. Analyzes project's `.claude/` setup against codebase patterns and git history to identify gaps, stale items, and improvements. Shares the same analysis framework as the build cycle's retro phase.
 
 ### Plan Artifacts
 

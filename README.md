@@ -92,6 +92,7 @@ The planning phase is the foundation. No code gets written until the idea has lo
 | `/robro:build` | Builder | Autonomously implements `plan.md` through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Produces working code with all spec items verified. |
 | `/robro:setup` | Configuration | Configures your project for robro: sets up CLAUDE.md sections, MCP/skill checklist, and `.gitignore` entries. |
 | `/robro:clean-memory` | Cleanup | Cross-plan analysis of completed plans and deletion of stale artifacts. Keeps your `docs/plans/` directory tidy. |
+| `/robro:tune` | Configuration | Audits and optimizes project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs) using codebase and git history analysis. |
 
 ---
 
