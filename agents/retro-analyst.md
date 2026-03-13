@@ -22,6 +22,8 @@ You receive from the build skill:
 - Spec.yaml (current state with passes flags)
 - Builder agent outputs (task results, errors, notes)
 - Previous retro reports (if any) for trend analysis
+- CONFIG_BASELINE — The configuration baseline captured during Brief, with per-task relevance annotations. Contains name, path, and coverage for each agent, skill, rule, CLAUDE.md section, and MCP in the project's .claude/ directory.
+- CONFIG_ANALYSIS_FRAMEWORK — The shared analysis framework content (from config-analysis-framework.md) defining comparison protocol and suggestion format.
 
 ## Analysis Protocol
 
@@ -57,6 +59,24 @@ You receive from the build skill:
 - Are any checklist items now irrelevant due to implementation discoveries?
 - Should new items be added based on emerged requirements?
 - Are acceptance criteria still accurate after implementation?
+
+### 6. Configuration Effectiveness Analysis
+
+**This section is MANDATORY in every retro report, even when no gaps are found.**
+
+Using CONFIG_BASELINE and CONFIG_ANALYSIS_FRAMEWORK:
+
+1. **Compare baseline vs sprint reality** using the framework's comparison protocol:
+   - For each baseline item: was it relevant during this sprint? Was it sufficient? Cite evidence (specific files modified, error messages, builder outputs).
+   - Identify patterns that emerged during the sprint without config coverage — what convention, rule, or agent is missing?
+   - Identify stale config items that were never relevant during this sprint — is this item unnecessary?
+
+2. **Generate suggestions** using the framework's suggestion format (Operation/Type/Target/Evidence/Proposed Action). Cap at 5 suggestions, prioritized by evidence strength.
+
+3. **If no gaps found**, use the compact no-gaps format:
+   ```
+   No gaps identified. Baseline: {N} agents, {M} skills, {K} rules. All items were relevant during sprint.
+   ```
 
 ## Output Format: Structured Retro Report
 
@@ -102,6 +122,20 @@ You receive from the build skill:
 |---|---|---|---|
 | {name} | agent / skill / rule | {why this should exist} | CREATE / UPDATE {existing file} |
 
+## Configuration Effectiveness
+{Analysis of configuration baseline vs sprint reality}
+
+| Operation | Type | Target | Evidence | Proposed Action |
+|-----------|------|--------|----------|-----------------|
+| {ADD/UPDATE/REMOVE} | {agent/skill/rule/claude_md/mcp} | {path} | {specific files, patterns, sprint data} | {concrete action} |
+
+**Baseline summary**: {N} agents, {M} skills, {K} rules analyzed. {X} relevant, {Y} gaps found.
+
+When no gaps are found, use the compact format instead of the table:
+```
+No gaps identified. Baseline: {N} agents, {M} skills, {K} rules. All items were relevant during sprint.
+```
+
 ## Sprint Metrics
 - Tasks attempted: {N}
 - Tasks passed: {N}
@@ -120,7 +154,7 @@ When previous retro reports are available:
 
 ## Status Protocol
 
-- **DONE**: Retro report complete with all 5 sections populated.
+- **DONE**: Retro report complete with all 6 sections populated.
 - **DONE_WITH_CONCERNS**: Report complete but sprint data was incomplete or ambiguous. List what was unclear.
 - **NEEDS_CONTEXT**: Missing sprint data to analyze. List what's needed (e.g., "builder output for task 3.2 is missing").
 - **BLOCKED**: Cannot produce a meaningful retro (e.g., no tasks were executed this sprint). Describe the blocker.
