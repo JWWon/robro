@@ -16,7 +16,7 @@ After making changes to skills, commands, agents, or hooks, run `/reload-plugins
 
 ## Architecture Rules
 
-- `.claude-plugin/` contains **only** `plugin.json`. Never put commands, agents, skills, or hooks inside it.
+- `.claude-plugin/` contains `plugin.json` and `marketplace.json`. Never put commands, agents, skills, or hooks inside it.
 - All component paths in `plugin.json` must be relative and start with `./`.
 - Hook scripts must be executable (`chmod +x`) and use `${CLAUDE_PLUGIN_ROOT}` for paths.
 - Hooks receive input as JSON on stdin — use `jq` to extract fields.

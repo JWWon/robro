@@ -37,7 +37,7 @@ The planning phase is the foundation. No code gets written until idea.md has amb
 
 ## Plugin Configuration
 
-The plugin manifest lives at `.claude-plugin/plugin.json`. This is the only file that belongs inside `.claude-plugin/` — all other directories (skills, agents, commands, hooks) go at the plugin root.
+The plugin manifest lives at `.claude-plugin/plugin.json` alongside `marketplace.json` for marketplace distribution. These are the only files that belong inside `.claude-plugin/` — all other directories (skills, agents, commands, hooks) go at the plugin root.
 
 ### plugin.json Schema
 
@@ -67,21 +67,24 @@ The plugin manifest lives at `.claude-plugin/plugin.json`. This is the only file
 ```
 robro/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest (only this goes here)
+│   ├── plugin.json          # Plugin manifest
+│   └── marketplace.json     # Marketplace distribution config
 ├── skills/                  # Agent skills (name/SKILL.md structure)
 │   ├── idea/SKILL.md        # PM: Socratic interview → idea.md
 │   ├── spec/SKILL.md        # EM: Technical spec → plan.md + spec.yaml
-│   └── build/SKILL.md       # Builder: evolutionary sprint execution
-│       ├── brief-phase.md
-│       ├── heads-down-phase.md
-│       ├── review-phase.md
-│       ├── retro-phase.md
-│       ├── level-up-phase.md
-│       └── converge-phase.md
+│   ├── build/SKILL.md       # Builder: evolutionary sprint execution
+│   │   ├── brief-phase.md
+│   │   ├── heads-down-phase.md
+│   │   ├── review-phase.md
+│   │   ├── retro-phase.md
+│   │   ├── level-up-phase.md
+│   │   └── converge-phase.md
+│   ├── setup/SKILL.md       # Project configuration
+│   └── clean-memory/SKILL.md # Completed plan cleanup
 ├── agents/                  # Subagent markdown definitions
-│   ├── researcher.md        # Web + codebase exploration (idea, spec)
-│   ├── architect.md         # Technical review (spec)
-│   ├── critic.md            # Ambiguity scoring & gap analysis (idea, spec)
+│   ├── researcher.md        # Web + codebase exploration (idea, spec, build)
+│   ├── architect.md         # Technical review (spec, build)
+│   ├── critic.md            # Ambiguity scoring & gap analysis (idea, spec, build)
 │   ├── planner.md           # Task breakdown (spec)
 │   ├── contrarian.md        # Challenges assumptions (idea, round 4+)
 │   ├── simplifier.md        # YAGNI simplification (idea, round 6+)
@@ -106,6 +109,9 @@ robro/
         ├── idea.md           # Product requirements (from /robro:idea)
         ├── plan.md           # Implementation phases (from /robro:spec)
         ├── spec.yaml         # Validation checklist (from /robro:spec)
+        ├── spec-mutations.log # Append-only audit trail (committed)
+        ├── status.yaml       # Pipeline state (gitignored)
+        ├── build-progress.md # Implementation log (in discussion/, gitignored)
         ├── research/         # Temporal: web/codebase findings (gitignored)
         └── discussion/       # Temporal: interview logs, agent deliberation (gitignored)
 ```
