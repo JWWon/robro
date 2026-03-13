@@ -79,6 +79,51 @@ gate: "Architect APPROVED + Critic PASS, user approves ADR and plan"
 3. Identify areas that need deeper technical investigation
 4. **Scope check**: If idea.md covers multiple independent subsystems, suggest breaking into separate specs — one per subsystem
 
+### Step 1.5: Create Plan Worktree
+
+Create an isolated worktree for all plan and implementation work. This keeps main branch clean -- only the final squash merge commit lands on main.
+
+1. **Save the current plan directory path** (e.g., `docs/plans/260313_worktree-workflow/`). You have already read idea.md and research files from here.
+
+2. **Create worktree**:
+   ```
+   EnterWorktree(name: "{slug}")
+   ```
+   Where `{slug}` is the plan directory basename (e.g., `260313_worktree-workflow`). This creates `.claude/worktrees/{slug}/` and switches the session CWD to it.
+
+   **Resume check**: If the worktree already exists (from a previous interrupted session), skip creation and just enter it.
+
+3. **Rename branch** for clarity:
+   ```bash
+   git branch -m plan/{slug}
+   ```
+
+4. **Copy plan files from main to worktree**:
+   ```bash
+   # Copy the entire plan directory (including gitignored research/, discussion/)
+   cp -r /path/to/main-repo/docs/plans/{slug}/ docs/plans/{slug}/
+   ```
+   The source path is the absolute path to the main repo's plan directory that you saved in step 1.
+
+5. **Clean up main's working directory**:
+   ```bash
+   rm -rf /path/to/main-repo/docs/plans/{slug}/
+   ```
+   This prevents hooks from finding stale state when a session starts from the main repo.
+
+6. **Update status.yaml** in the worktree:
+   ```yaml
+   skill: plan
+   step: 2
+   branch: plan/{slug}
+   worktree: .claude/worktrees/{slug}
+   detail: "Worktree created, starting technical deep dive"
+   next: "Dispatch Researcher, Architect, and Critic"
+   gate: "Architect APPROVED + Critic PASS, user approves ADR and plan"
+   ```
+
+All subsequent work (Steps 2-10) happens inside the worktree. Commits go to the `plan/{slug}` branch.
+
 ### Step 2: Technical Deep Dive
 
 Dispatch agents in parallel:
@@ -293,6 +338,7 @@ meta:
   created: "{ISO 8601 timestamp}"
   updated: "{ISO 8601 timestamp}"
   ambiguity_score: {final critic score}
+  complexity: "{light|standard|complex}"
 
 goal: "{copied from idea.md ## Goal section — must match exactly}"
 
@@ -350,6 +396,12 @@ checklist:
       3. {assertion — expected result}
     passes: false
 ```
+
+**Complexity assignment**: Read the `complexity` field from idea.md frontmatter. If not present, assess based on:
+- **light**: Single file change, config update, simple bugfix. 1-3 spec items.
+- **standard**: Multi-file feature, moderate scope. 4-15 spec items.
+- **complex**: Cross-cutting change, multiple subsystems, architectural impact. 15+ spec items.
+Record the complexity in spec.yaml's `meta.complexity` field. The do skill reads this to select agent models.
 
 **spec.yaml quality requirements**:
 - Every idea.md "Must Have" requirement maps to at least one checklist item
