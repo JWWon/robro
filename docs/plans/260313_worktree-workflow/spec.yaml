@@ -166,7 +166,7 @@ checklist:
       4. Expected: SKILL.md, plan-reviewer-prompt.md, spec-reviewer-prompt.md
       5. Run: test ! -d skills/spec && echo PASS
       6. Expected: PASS
-    passes: false
+    passes: true
 
   - id: C2
     section: S1
@@ -182,7 +182,7 @@ checklist:
       4. Expected: 8 files (SKILL.md + 6 phases + config-analysis-framework.md)
       5. Run: test ! -d skills/build && echo PASS
       6. Expected: PASS
-    passes: false
+    passes: true
 
   - id: C3
     section: S1
@@ -196,7 +196,7 @@ checklist:
       2. Expected: no output (no matches)
       3. Run: grep -rn '/robro:build' skills/ scripts/ agents/ CLAUDE.md .claude/CLAUDE.md README.md
       4. Expected: no output (no matches)
-    passes: false
+    passes: true
 
   - id: C4
     section: S1
@@ -212,7 +212,7 @@ checklist:
       4. Expected: no output
       5. Run: grep -n 'plan\|do' scripts/pipeline-guard.sh | head -5
       6. Verify: shows 'plan)' and 'do)' case branches
-    passes: false
+    passes: true
 
   - id: C5
     section: S2
@@ -386,7 +386,7 @@ checklist:
       2. Expected: PASS
       3. Run: grep -rn 'clean-memory' skills/ CLAUDE.md .claude/CLAUDE.md README.md
       4. Expected: no output
-    passes: false
+    passes: true
 
   - id: C17
     section: S11
@@ -497,4 +497,16 @@ checklist:
       6. Expected: no matches
       7. Run: grep 'worktree' README.md
       8. Expected: at least 1 match
+    passes: false
+
+  - id: C25
+    section: S8
+    phase: 1
+    task: "1.2"
+    description: "Stale clean-memory test files removed from tests/"
+    acceptance_criteria: "tests/test-clean-memory-step1.sh, tests/test-clean-memory-step2.sh, tests/test-clean-memory-step3-4.sh do not exist."
+    test_type: manual
+    test_plan: |
+      1. Run: ls tests/test-clean-memory-step*.sh 2>/dev/null | wc -l
+      2. Expected: 0
     passes: false

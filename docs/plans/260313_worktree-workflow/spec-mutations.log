@@ -1,0 +1,6 @@
+2026-03-13T00:00:00Z	SPRINT:1	FLIP	checklist.C1	passes:true	REASON: Passed 3-stage review — skills/plan/ exists with correct frontmatter, skills/spec/ removed
+2026-03-13T00:00:00Z	SPRINT:1	FLIP	checklist.C2	passes:true	REASON: Passed 3-stage review — skills/do/ exists with correct frontmatter, skills/build/ removed
+2026-03-13T00:00:00Z	SPRINT:1	FLIP	checklist.C3	passes:true	REASON: Passed 3-stage review — 0 remaining /robro:spec or /robro:build refs
+2026-03-13T00:00:00Z	SPRINT:1	FLIP	checklist.C4	passes:true	REASON: Passed 3-stage review — 0 remaining "spec" or "build" in scripts, all bash -n pass
+2026-03-13T00:00:00Z	SPRINT:1	FLIP	checklist.C16	passes:true	REASON: Passed 3-stage review — skills/clean-memory/ removed, 0 remaining refs
+2026-03-13T00:00:00Z	SPRINT:1	ADD	checklist.C25	"Stale clean-memory test files removed from tests/"	REASON: Retro found 3 test files referencing deleted clean-memory skill

@@ -1,0 +1,33 @@
+# Model configuration per complexity tier
+# Read by /robro:do at Brief phase to determine agent dispatch models
+# Tiers: light (fast/cheap), standard (balanced), complex (thorough)
+#
+# Agent tool model values: haiku, sonnet, opus
+# Researcher and retro-analyst are capped at sonnet (never opus)
+# -- they gather/summarize, they don't make architectural decisions
+
+tiers:
+  light:
+    default: haiku
+    builder: haiku
+    reviewer: sonnet
+    architect: sonnet
+    critic: sonnet
+    researcher: haiku
+    retro-analyst: haiku
+  standard:
+    default: sonnet
+    builder: sonnet
+    reviewer: sonnet
+    architect: opus
+    critic: opus
+    researcher: sonnet
+    retro-analyst: sonnet
+  complex:
+    default: opus
+    builder: opus
+    reviewer: opus
+    architect: opus
+    critic: opus
+    researcher: sonnet
+    retro-analyst: sonnet
