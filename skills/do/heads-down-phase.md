@@ -216,8 +216,6 @@ worktree: .claude/worktrees/{slug}
 detail: "Starting 3-stage review pipeline"
 next: "Run mechanical verification first"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```
 
 Log transition to build-progress.md: "Heads-down complete. Starting Review."

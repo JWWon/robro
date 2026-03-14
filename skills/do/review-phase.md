@@ -99,8 +99,6 @@ worktree: .claude/worktrees/{slug}
 detail: "Starting retrospective analysis"
 next: "Dispatch retro-analyst with sprint data"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```
 
 Log transition to build-progress.md: "Review complete. {count} items ready to flip."

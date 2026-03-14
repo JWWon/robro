@@ -18,3 +18,9 @@ Thumbs.db
 
 # Worktree directories
 .claude/worktrees/
+
+# Robro runtime state (v0.2.0+)
+.robro/.skill-index.json
+.robro/.oscillation-state.json
+.robro/.injected-skills.json
+.robro/.update-cache.json

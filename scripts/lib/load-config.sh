@@ -15,8 +15,10 @@
 #   has_artifact          — check if any session has a specific file
 #   robro_providers       — enumerate enabled+installed external CLI providers
 
-SESSIONS_DIR=".robro/sessions"
-CONFIG_FILE=".robro/config.json"
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+export PROJECT_ROOT
+SESSIONS_DIR="${PROJECT_ROOT}/.robro/sessions"
+CONFIG_FILE="${PROJECT_ROOT}/.robro/config.json"
 
 # Read a value from .robro/config.json with a default fallback.
 # Usage: robro_config <jq_path> <default_value>
@@ -126,4 +128,31 @@ robro_providers() {
   ' 2>/dev/null | while IFS=: read -r name binary model timeout_ms; do
     command -v "$binary" > /dev/null 2>&1 && echo "${name}:${model}:${timeout_ms}"
   done
+}
+
+# Atomic file write: write stdin to temp file, then rename.
+# Usage: echo "content" | atomic_write "/path/to/file"
+atomic_write() {
+  local target="$1"
+  local tmp="${target}.tmp.$$"
+  cat > "$tmp"
+  mv -f "$tmp" "$target"
+}
+
+# Extract last N sprint sections from build-progress.md for injection.
+# Full file is preserved on disk — only the output is truncated.
+# Usage: truncate_build_progress "/path/to/build-progress.md" 5
+truncate_build_progress() {
+  local file="$1"
+  local max_sprints="${2:-5}"
+  [ -f "$file" ] || return
+  awk -v max="$max_sprints" '
+    /^## Sprint/ { sections[++count] = "" }
+    count > 0 { sections[count] = sections[count] $0 "\n" }
+    END {
+      start = count - max + 1
+      if (start < 1) start = 1
+      for (i = start; i <= count; i++) printf "%s", sections[i]
+    }
+  ' "$file"
 }

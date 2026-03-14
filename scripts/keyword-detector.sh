@@ -5,12 +5,23 @@
 INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // .content // ""' 2>/dev/null)
 
-# Normalize: lowercase, trim (use sed instead of xargs for quoting safety)
-PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
 # Load shared config
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib/load-config.sh"
+
+# Sanitize prompt: strip XML tags, URLs, file paths, and code blocks
+sanitize_prompt() {
+  local prompt="$1"
+  echo "$prompt" \
+    | sed 's/<[^>]*>//g' \
+    | sed 's|https\?://[^ ]*||g' \
+    | sed 's|/[a-zA-Z_./]*\.[a-zA-Z]*||g' \
+    | sed '/^```/,/^```/d' \
+    | tr '[:upper:]' '[:lower:]'
+}
+
+# Apply sanitization before keyword matching
+PROMPT_LOWER=$(sanitize_prompt "$PROMPT")
 
 # Skip if empty or too short
 [ ${#PROMPT_LOWER} -lt 3 ] && exit 0

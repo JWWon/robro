@@ -86,7 +86,7 @@ branch: ""
 worktree: ""
 detail: "Reading and internalizing requirements"
 next: "Dispatch Researcher, Architect, and Critic for technical deep dive"
-gate: "Architect APPROVED + Critic PASS, user approves ADR and plan"
+gate: "Architect DONE + Critic PASS, user approves ADR and plan"
 ```
 
 1. Read `idea.md` thoroughly — internalize problem statement, requirements, constraints, success criteria, and proposed approach
@@ -135,7 +135,7 @@ Create an isolated worktree for all plan and implementation work. This keeps mai
    worktree: .claude/worktrees/{slug}
    detail: "Worktree created, starting technical deep dive"
    next: "Dispatch Researcher, Architect, and Critic"
-   gate: "Architect APPROVED + Critic PASS, user approves ADR and plan"
+   gate: "Architect DONE + Critic PASS, user approves ADR and plan"
    ```
 
 All subsequent work (Steps 2-10) happens inside the worktree. Commits go to the `plan/{slug}` branch.
@@ -201,7 +201,7 @@ After processing statuses, route on the **Verdict** from Critic and Architect:
 4. Re-run Architect + Critic review
 5. Repeat until both pass — **iterate as many times as needed**
 
-**Iteration policy**: There is no arbitrary cap. The loop exits only when the Critic returns PASS or ACCEPT_WITH_RESERVATIONS AND the Architect returns APPROVED or APPROVED_WITH_CONCERNS. After every 3 iterations, inform the user of progress and ask whether to continue iterating, try a different approach, or accept current state with noted concerns. Never silently give up.
+**Iteration policy**: There is no arbitrary cap. The loop exits only when the Critic returns PASS or ACCEPT_WITH_RESERVATIONS AND the Architect returns DONE or DONE_WITH_CONCERNS. After every 3 iterations, inform the user of progress and ask whether to continue iterating, try a different approach, or accept current state with noted concerns. Never silently give up.
 
 ### Step 3.5: User Checkpoint — Architecture Decisions
 
@@ -319,8 +319,12 @@ Agent(prompt: "{plan reviewer prompt from template}", model: "sonnet")
 ```
 
 1. Reviewer checks: completeness, spec alignment, task atomicity, file structure, TDD compliance
-2. If issues found: fix and re-dispatch reviewer
-3. Repeat until approved — iterate as many times as needed. After every 3 iterations, inform the user of remaining issues and ask whether to continue or proceed with noted gaps.
+2. Route on reviewer **Status**:
+   - **DONE**: Reviewer found no issues. Proceed to Step 5.5.
+   - **DONE_WITH_CONCERNS**: Reviewer found issues. Address all concerns in plan.md, then re-dispatch reviewer.
+   - **NEEDS_CONTEXT**: Provide the missing context (from idea.md, research/, or codebase) and re-dispatch.
+   - **BLOCKED**: Escalate to user — the plan has fundamental issues preventing review.
+3. Repeat until reviewer returns DONE — iterate as many times as needed. After every 3 iterations, inform the user of remaining issues and ask whether to continue or proceed with noted gaps.
 
 ### Step 5.5: User Checkpoint — Plan Review
 
@@ -454,8 +458,12 @@ Agent(prompt: "{spec reviewer prompt from template}", model: "sonnet")
 ```
 
 1. Reviewer checks: completeness, internal consistency, checklist coverage, test plan executability
-2. If issues found: fix and re-dispatch reviewer
-3. Repeat until approved — iterate as many times as needed. After every 3 iterations, inform the user of remaining issues and ask whether to continue or proceed with noted gaps.
+2. Route on reviewer **Status**:
+   - **DONE**: Reviewer found no issues. Proceed to Step 8.
+   - **DONE_WITH_CONCERNS**: Reviewer found issues. Address all concerns in spec.yaml, then re-dispatch reviewer.
+   - **NEEDS_CONTEXT**: Provide the missing context (from idea.md, plan.md, or codebase) and re-dispatch.
+   - **BLOCKED**: Escalate to user — the spec has fundamental issues preventing review.
+3. Repeat until reviewer returns DONE — iterate as many times as needed. After every 3 iterations, inform the user of remaining issues and ask whether to continue or proceed with noted gaps.
 
 ### Step 8: Cross-Validation
 

@@ -36,11 +36,11 @@ if [ -f "$ERROR_FILE" ]; then
   new_entry=$(jq -n --arg ts "$timestamp" --arg tool "$TOOL" --arg err "$ERROR" \
     '{"timestamp":$ts,"tool":$tool,"error":$err}')
   echo "$existing" | jq --argjson entry "$new_entry" \
-    '. + [$entry] | .[-20:]' > "$ERROR_FILE" 2>/dev/null
+    '. + [$entry] | .[-20:]' 2>/dev/null | atomic_write "$ERROR_FILE"
 else
   # Create new file with first entry
   jq -n --arg ts "$timestamp" --arg tool "$TOOL" --arg err "$ERROR" \
-    '[{"timestamp":$ts,"tool":$tool,"error":$err}]' > "$ERROR_FILE"
+    '[{"timestamp":$ts,"tool":$tool,"error":$err}]' | atomic_write "$ERROR_FILE"
 fi
 
 exit 0

@@ -184,8 +184,6 @@ If any gate fails and no hard cap reached:
    detail: "Preparing sprint {N+1}"
    next: "Begin Brief phase — gather context and plan"
    gate: "All 5 convergence gates pass"
-   attempt: 1
-   reinforcement_count: 0
    ```
 
 4. Log to build-progress.md: "Sprint {N} complete. {remaining} items left. Continuing..."

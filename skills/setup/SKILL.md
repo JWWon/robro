@@ -227,7 +227,7 @@ Configure `.gitignore` at the project root so that temporal plan artifacts are n
 
 #### 3a. Define Rules
 
-The following 5 rules must be present in the project's `.gitignore`:
+The following 9 rules must be present in the project's `.gitignore`:
 
 ```
 # Robro temporal artifacts
@@ -236,26 +236,35 @@ The following 5 rules must be present in the project's `.gitignore`:
 .robro/sessions/*/status.yaml
 .robro/sessions/*/*.bak.*
 .claude/worktrees/
+# Robro runtime state (v0.2.0+)
+.robro/.skill-index.json
+.robro/.oscillation-state.json
+.robro/.injected-skills.json
+.robro/.update-cache.json
 ```
 
-Store these 5 rule lines (not including the comment header) as `ROBRO_RULES` for comparison below:
+Store these 9 rule lines (not including the comment headers) as `ROBRO_RULES` for comparison below:
 
 1. `.robro/sessions/*/research/`
 2. `.robro/sessions/*/discussion/`
 3. `.robro/sessions/*/status.yaml`
 4. `.robro/sessions/*/*.bak.*`
 5. `.claude/worktrees/`
+6. `.robro/.skill-index.json`
+7. `.robro/.oscillation-state.json`
+8. `.robro/.injected-skills.json`
+9. `.robro/.update-cache.json`
 
 #### 3b. Check Existing .gitignore
 
 1. Use the Read tool to read `${PROJECT_ROOT}/.gitignore` (using the `PROJECT_ROOT` from Step 1)
 2. If the Read tool returns a "file does not exist" error, the file does not exist — proceed to 3c (create case)
-3. If the file exists, read its full content. For each of the 5 rules in `ROBRO_RULES`, check whether the EXACT rule text appears as a line in the file (exact string match, trimming trailing whitespace)
+3. If the file exists, read its full content. For each of the 9 rules in `ROBRO_RULES`, check whether the EXACT rule text appears as a line in the file (exact string match, trimming trailing whitespace)
 4. Build a list of missing rules — rules that do NOT already appear in the file
 
 #### 3c. Apply Missing Rules
 
-**If `.gitignore` does NOT exist**: Create it with the Write tool containing the header comment and all 5 rules:
+**If `.gitignore` does NOT exist**: Create it with the Write tool containing the header comments and all 9 rules:
 
 ```
 # Robro temporal artifacts
@@ -264,21 +273,26 @@ Store these 5 rule lines (not including the comment header) as `ROBRO_RULES` for
 .robro/sessions/*/status.yaml
 .robro/sessions/*/*.bak.*
 .claude/worktrees/
+# Robro runtime state (v0.2.0+)
+.robro/.skill-index.json
+.robro/.oscillation-state.json
+.robro/.injected-skills.json
+.robro/.update-cache.json
 ```
 
-Report: **".gitignore: created with 5 rules"**
+Report: **".gitignore: created with 9 rules"**
 
 **If `.gitignore` exists but is missing some rules**:
 
 1. Check if the file content ends with a newline. If not, prepend a newline to the content you will append
 2. Add a blank line separator
-3. Add the `# Robro temporal artifacts` header comment ONLY if none of the 5 robro rules currently exist in the file (i.e., all 5 are missing). If some rules already exist, skip the header to avoid duplicate headers
+3. Add the `# Robro temporal artifacts` header comment ONLY if none of the 9 robro rules currently exist in the file (i.e., all 9 are missing). If some rules already exist, skip the header to avoid duplicate headers
 4. Append only the missing rules, one per line
 5. Use the Edit tool to append to the end of the file
 
 Report: **".gitignore: added {N} missing rules"** (where N is the count of rules that were added)
 
-**If all 5 rules already present**: No changes needed.
+**If all 9 rules already present**: No changes needed.
 
 Report: **".gitignore: all robro rules already present — no changes"**
 
@@ -546,6 +560,33 @@ This step produces identical results on re-run:
 - Running setup twice does not create duplicate entries
 - Provider config is merged into existing `.robro/config.json`, preserving other fields
 
+### Step 3.9: v0.2.0 Migration
+
+This step ensures the project has the directory structure and state files introduced in v0.2.0. It is safe to run on both new and existing projects.
+
+#### 3.9a. Create .robro/skills/ Directory
+
+Create the learned skills directory if it doesn't exist:
+
+```bash
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+mkdir -p "${PROJECT_ROOT}/.robro/skills"
+```
+
+This directory stores project-specific learned skills discovered during build cycles. Skills placed here are indexed and can be injected into future sessions.
+
+Report: **".robro/skills/: created"** or **".robro/skills/: already exists"**
+
+#### 3.9b. Verify Runtime State Files Are Gitignored
+
+Confirm that the 4 new v0.2.0 runtime state files are covered by the `.gitignore` rules added in Step 3:
+
+- `.robro/.skill-index.json` — Learned skill index
+- `.robro/.oscillation-state.json` — Oscillation detection state
+- `.robro/.injected-skills.json` — Skill injection tracking
+- `.robro/.update-cache.json` — Plugin update check cache
+
+These files are created automatically by hooks at runtime and must never be committed. If Step 3 completed successfully, they are already covered.
 ### Step 4: Completion Summary
 Report all actions taken:
 - CLAUDE.md: created/updated/unchanged

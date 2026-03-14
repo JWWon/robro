@@ -1,0 +1,489 @@
+meta:
+  id: "260314_plugin-diagnosis"
+  idea: idea.md
+  plan: plan.md
+  created: "2026-03-14T14:00:00+09:00"
+  updated: "2026-03-14T14:00:00+09:00"
+  ambiguity_score: 0.11
+  complexity: "complex"
+
+goal: "Enhance robro's reliability, intelligence, and project-adaptability by addressing gaps identified through competitive analysis of ouroboros, superpowers, oh-my-claudecode, gstack, and long-running harness patterns — while preserving robro's core opinions on evolving setup, multi-agent interviews, spec-driven checklists, worktree enforcement, and customizable bundles."
+
+constraints:
+  - "Breaking release v0.2.0 — existing users re-run /robro:setup to migrate"
+  - "Node.js allowed for new hooks — zero npm dependencies, self-contained .mjs files"
+  - "Shell scripts remain primary — Node.js is additive, not a replacement"
+  - "Core opinions immutable — multi-agent interviews, spec checklists, worktree enforcement, customizable bundles"
+  - "JSON frontmatter for machine-generated .robro/skills/*.md — YAML subset too fragile for zero-dep parsing"
+
+non_goals:
+  - "SQLite event store — too heavy for shell+markdown philosophy"
+  - "Multi-provider architecture — Claude-only, no Codex/Gemini backends"
+  - "TUI dashboard / HUD statusline — not aligned with lightweight ethos"
+  - "Compiled browser daemon — gstack-specific, not generalizable"
+  - "Per-generation git tags with automatic rollback — worktree isolation serves same purpose"
+
+context:
+  type: "brownfield"
+  tech_stack:
+    - "Claude Code plugin system (skills/, agents/, hooks/)"
+    - "Bash scripts (existing hooks)"
+    - "Node.js ESM .mjs (new hooks)"
+    - "JSON Schema (config validation)"
+  existing_patterns:
+    - "Shared lib/load-config.sh for hook state management"
+    - "Agent status protocol: DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|BLOCKED"
+    - "Hook JSON stdout: { continue, hookSpecificOutput: { hookEventName, additionalContext } }"
+    - "status.yaml at plan root drives hook injection"
+    - "Atomic commits per task, worktree branch isolation"
+  key_files:
+    - "scripts/lib/load-config.sh"
+    - "scripts/session-start.sh"
+    - "scripts/stop-hook.sh"
+    - "scripts/error-tracker.sh"
+    - "scripts/keyword-detector.sh"
+    - "hooks/hooks.json"
+    - "config.schema.json"
+    - ".claude-plugin/plugin.json"
+    - "skills/do/brief-phase.md"
+    - "skills/do/level-up-phase.md"
+    - "skills/plan/plan-reviewer-prompt.md"
+
+architecture_decisions:
+  - decision: "Skill injection on UserPromptSubmit"
+    rationale: "Keywords only exist after user types prompt; matches OMC production pattern"
+    alternatives: ["SessionStart unconditional inject"]
+  - decision: "JSON frontmatter for .robro/skills/*.md"
+    rationale: "JSON.parse() is native Node.js, zero-dep, zero parsing ambiguity"
+    alternatives: ["YAML frontmatter for visual consistency with SKILL.md"]
+  - decision: "Conditional Wonder dispatch"
+    rationale: "~50% context savings on healthy builds; triggers on no-progress, oscillation, or sprint >= 3"
+    alternatives: ["Fixed per-sprint dispatch"]
+  - decision: "Skill index cache at .robro/.skill-index.json"
+    rationale: "O(1) index reads per prompt vs O(N) file scans"
+    alternatives: ["No cache — scan skill files each prompt"]
+  - decision: "Separate update-check hook in hooks.json"
+    rationale: "Isolates network-dependent check from critical session-start.sh"
+    alternatives: ["Inline in session-start.sh"]
+  - decision: "Truncate build-progress.md injection only (last 5 sprints)"
+    rationale: "Full file preserved for audit; only injected portion is bounded"
+    alternatives: ["Truncate the actual file"]
+  - decision: "Atomic writes for script-written files only"
+    rationale: "stop-hook counter and error-tracker JSON are the only script-written state files; LLM Write tool is already atomic"
+    alternatives: ["Atomic writes for all state files"]
+  - decision: "Plan reviewers map to standard DONE/BLOCKED protocol"
+    rationale: "Protocol consistency across all agents; APPROVED→DONE, ISSUES_FOUND→DONE_WITH_CONCERNS"
+    alternatives: ["Keep current APPROVED/ISSUES_FOUND"]
+
+sections:
+  - id: S1
+    name: "State Reliability + Infrastructure"
+    description: "Foundation fixes: CWD normalization, dead field cleanup, atomic writes, config schema, plugin.json paths, build-progress truncation"
+    requirements:
+      - "All hooks resolve SESSIONS_DIR to absolute path via git rev-parse"
+      - "Remove dead attempt and reinforcement_count from status.yaml templates"
+      - "Atomic file writes for script-managed state files"
+      - "Plugin.json declares component paths"
+      - "Config schema includes new v0.2.0 thresholds"
+      - "Build-progress.md bounded for retro injection"
+
+  - id: S2
+    name: "Stagnation Detection + Agent Protocol"
+    description: "Oscillation detection hook, Wonder agent, conditional dispatch integration, plan reviewer protocol standardization"
+    requirements:
+      - "Oscillation hook detects same file edited >= 3 times in a sprint"
+      - "Wonder agent defined with structured input/output contracts"
+      - "Wonder dispatches conditionally at sprint boundaries"
+      - "Plan reviewers use standard DONE/BLOCKED status protocol"
+
+  - id: S3
+    name: "Self-Evolution (Learner Pattern)"
+    description: "Skill injection hook, index cache, level-up integration, user-scoped skill path"
+    requirements:
+      - "Skill files use JSON frontmatter with triggers array"
+      - "Skill index cache rebuilt on changes"
+      - "Skills injected on keyword match via UserPromptSubmit"
+      - "Level-up writes learned skills to .robro/skills/"
+      - "User-scoped skills at ~/.robro/skills/ supported"
+
+  - id: S4
+    name: "Compression Resistance + Should-Haves"
+    description: "Rationalization tables, verification gate, prompt sanitization, context budget rules, SubagentStop verification"
+    requirements:
+      - "Rationalization tables injected at sprint start"
+      - "Verification-before-completion gate in builder agent"
+      - "Prompt sanitization before keyword matching"
+      - "Context budget priority rules in key agent prompts"
+      - "SubagentStop deliverable verification hook"
+
+  - id: S5
+    name: "Operational Polish"
+    description: "Version update check, template validation, CLAUDE.md fix, setup migration, version bump"
+    requirements:
+      - "SessionStart emits update notice when local < remote version"
+      - "Template validation script passes (CI-runnable)"
+      - "CLAUDE.md shows both greenfield and brownfield ambiguity formulas"
+      - "Setup skill handles v0.2.0 migration"
+      - "Version bumped to 0.2.0"
+
+checklist:
+  - id: C1
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "CWD normalization — SESSIONS_DIR and WORKTREE_DIR resolve to absolute paths"
+    acceptance_criteria: "All hook scripts resolve SESSIONS_DIR via git rev-parse --show-toplevel. Running hooks from a subdirectory produces the same paths as from project root. No bare relative .robro/sessions or .claude/worktrees references remain in scripts/."
+    test_type: "integration"
+    test_plan: |
+      1. Source scripts/lib/load-config.sh from a subdirectory (e.g., cd scripts/ && source lib/load-config.sh)
+      2. Echo $SESSIONS_DIR — should be absolute path ending in .robro/sessions
+      3. Grep for bare relative paths: grep -rn '\.robro/sessions"\|\.claude/worktrees"' scripts/ — should find 0 matches
+    passes: true
+
+  - id: C2
+    section: S1
+    phase: 1
+    task: "1.2"
+    description: "Atomic writes — atomic_write() function available and used by stop-hook and error-tracker"
+    acceptance_criteria: "atomic_write() function defined in load-config.sh. stop-hook.sh and error-tracker.sh use atomic_write() for all file writes."
+    test_type: "unit"
+    test_plan: |
+      1. Source load-config.sh, verify atomic_write is a function: type atomic_write
+      2. grep -n 'atomic_write' scripts/stop-hook.sh — should show usage
+      3. grep -n 'atomic_write' scripts/error-tracker.sh — should show usage
+      4. Test atomic_write: echo "test" | atomic_write /tmp/test-aw.txt && cat /tmp/test-aw.txt — should output "test"
+    passes: true
+
+  - id: C3
+    section: S1
+    phase: 1
+    task: "1.3"
+    description: "Dead field removal — no attempt or reinforcement_count in status.yaml templates"
+    acceptance_criteria: "grep -rn 'attempt:\\|reinforcement_count:' skills/do/ returns zero results"
+    test_type: "unit"
+    test_plan: |
+      1. Run: grep -rn 'attempt:\|reinforcement_count:' skills/do/
+      2. Verify: zero matches (exit code 1 from grep = no matches)
+    passes: true
+
+  - id: C4
+    section: S1
+    phase: 1
+    task: "1.5"
+    description: "Plugin.json component paths — skills, agents, hooks fields declared"
+    acceptance_criteria: "jq '.skills, .agents, .hooks' .claude-plugin/plugin.json returns three non-null values"
+    test_type: "unit"
+    test_plan: |
+      1. Run: jq '.skills' .claude-plugin/plugin.json — should output "./skills/"
+      2. Run: jq '.agents' .claude-plugin/plugin.json — should output "./agents/"
+      3. Run: jq '.hooks' .claude-plugin/plugin.json — should output "./hooks/hooks.json"
+    passes: true
+
+  - id: C5
+    section: S1
+    phase: 1
+    task: "1.6"
+    description: "Config schema — new v0.2.0 threshold fields present"
+    acceptance_criteria: "config.schema.json contains build_progress_max_sprints, oscillation_cycle_threshold, wonder_min_sprint, skill_injection_cap in thresholds"
+    test_type: "unit"
+    test_plan: |
+      1. Run: jq '.properties.thresholds.properties | keys' config.schema.json
+      2. Verify output contains: build_progress_max_sprints, oscillation_cycle_threshold, wonder_min_sprint, skill_injection_cap
+    passes: true
+
+  - id: C6
+    section: S1
+    phase: 1
+    task: "1.7"
+    description: "Build-progress truncation — truncate_build_progress() extracts last N sprint sections"
+    acceptance_criteria: "Function defined in load-config.sh. Given 8 sprint sections, 'truncate_build_progress /path/file 5' outputs only sprints 4-8."
+    test_type: "unit"
+    test_plan: |
+      1. Create /tmp/test-bp.md with 8 "## Sprint N" sections
+      2. Source load-config.sh, run: truncate_build_progress /tmp/test-bp.md 5
+      3. Verify output starts with "## Sprint 4" and ends with Sprint 8 content
+      4. Verify original file is unchanged
+    passes: true
+
+  - id: C7
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "Oscillation detection — hook detects same file edited >= 3 times"
+    acceptance_criteria: "scripts/oscillation-detector.mjs exists. Feeding 3 PostToolUse events for the same file path emits an oscillation-warning in additionalContext. Threshold is configurable via .robro/config.json."
+    test_type: "integration"
+    test_plan: |
+      1. Delete .robro/.oscillation-state.json if it exists (clean state)
+      2. Create mock PostToolUse JSON input: {"tool_input":{"file_path":"src/test.ts"}}
+      3. Pipe it to node scripts/oscillation-detector.mjs — verify no warning output
+      4. Pipe same input again — verify no warning output
+      5. Pipe same input third time — verify JSON output contains oscillation-warning tag
+      6. Verify .robro/.oscillation-state.json contains {"src/test.ts": 3}
+      7. Clean up: delete .robro/.oscillation-state.json
+    passes: true
+
+  - id: C8
+    section: S2
+    phase: 2
+    task: "2.2"
+    description: "Wonder agent definition — agents/wonder.md with input/output contracts"
+    acceptance_criteria: "agents/wonder.md exists with valid YAML frontmatter (name, description, model). Body contains Input Contract and Output Contract sections. Output contract specifies blind_spots[] and lateral_recommendation fields."
+    test_type: "manual"
+    test_plan: |
+      1. Read agents/wonder.md
+      2. Verify frontmatter has name: wonder, description, model: sonnet
+      3. Verify body has ## Input Contract section listing spec.yaml, git diff, retro Knowledge Gaps, oscillation warnings
+      4. Verify body has ## Output Contract section with JSON schema {blind_spots[], lateral_recommendation?}
+    passes: true
+
+  - id: C9
+    section: S2
+    phase: 2
+    task: "2.3"
+    description: "Wonder dispatch integration — conditional dispatch in brief phase"
+    acceptance_criteria: "skills/do/brief-phase.md contains a Wonder Phase section with conditional dispatch logic (no items flipped, oscillation fired, sprint >= wonder_min_sprint). Routes on Wonder status."
+    test_type: "manual"
+    test_plan: |
+      1. Read skills/do/brief-phase.md
+      2. Verify section titled "Wonder Phase (Conditional)" exists
+      3. Verify three trigger conditions listed
+      4. Verify status routing (DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, BLOCKED)
+    passes: true
+
+  - id: C10a
+    section: S2
+    phase: 2
+    task: "2.4"
+    description: "Plan reviewer templates — standard DONE/BLOCKED status protocol"
+    acceptance_criteria: "plan-reviewer-prompt.md and spec-reviewer-prompt.md contain DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|BLOCKED. Zero references to APPROVED|ISSUES_FOUND in reviewer templates."
+    test_type: "unit"
+    test_plan: |
+      1. grep 'DONE | DONE_WITH_CONCERNS' skills/plan/plan-reviewer-prompt.md — should match
+      2. grep 'DONE | DONE_WITH_CONCERNS' skills/plan/spec-reviewer-prompt.md — should match
+      3. grep -c 'APPROVED' skills/plan/plan-reviewer-prompt.md skills/plan/spec-reviewer-prompt.md — both should be 0
+    passes: true
+
+  - id: C10b
+    section: S2
+    phase: 2
+    task: "2.5"
+    description: "Plan skill routing — routes on standard DONE/BLOCKED protocol for reviewers"
+    acceptance_criteria: "skills/plan/SKILL.md reviewer handling sections route on DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED. Zero references to APPROVED|ISSUES_FOUND in SKILL.md."
+    test_type: "unit"
+    test_plan: |
+      1. grep -c 'DONE_WITH_CONCERNS\|NEEDS_CONTEXT\|BLOCKED' skills/plan/SKILL.md — should be > 0
+      2. grep -c 'APPROVED\|ISSUES_FOUND' skills/plan/SKILL.md — should be 0
+    passes: true
+
+  - id: C11
+    section: S3
+    phase: 3
+    task: "3.1"
+    description: "Skill file format — JSON frontmatter schema defined and parseable"
+    acceptance_criteria: "skill-injector.mjs can parse a .robro/skills/*.md file with JSON frontmatter containing name, description, triggers array. Parser extracts all three fields correctly."
+    test_type: "integration"
+    test_plan: |
+      1. Create a test skill file with JSON frontmatter: {"name":"test","triggers":["test keyword"],"description":"test skill"}
+      2. Run the index builder function from skill-injector.mjs
+      3. Verify index entry has name "test", triggers ["test keyword"], description "test skill"
+    passes: true
+
+  - id: C12
+    section: S3
+    phase: 3
+    task: "3.1"
+    description: "Skill index cache — .robro/.skill-index.json built from skill files"
+    acceptance_criteria: "After running index builder with 2 skill files, .robro/.skill-index.json contains 2 entries with path, name, triggers, description, scope fields."
+    test_type: "integration"
+    test_plan: |
+      1. Create 2 test skill files in .robro/skills/
+      2. Run the index builder
+      3. Read .robro/.skill-index.json, verify it has 2 entries
+      4. Verify each entry has: path, name, triggers (array), description, scope
+    passes: true
+
+  - id: C13
+    section: S3
+    phase: 3
+    task: "3.1"
+    description: "Skill injection — matching skills injected on UserPromptSubmit"
+    acceptance_criteria: "Given a prompt containing a trigger keyword, the skill-injector.mjs outputs hookSpecificOutput with additionalContext containing the matched skill content wrapped in project-skill tags."
+    test_type: "integration"
+    test_plan: |
+      1. Create a test skill with triggers: ["drizzle migration"]
+      2. Build the index
+      3. Pipe {"prompt":"how to run drizzle migration"} to skill-injector.mjs
+      4. Verify output contains <project-skill name="..."> tag with skill content
+    passes: true
+
+  - id: C14
+    section: S3
+    phase: 3
+    task: "3.1"
+    description: "Skill injection cap — max 5 skills per session, deduplication"
+    acceptance_criteria: "With 7 matching skills, only 5 are injected. Same skill is not re-injected in subsequent prompts within the same session."
+    test_type: "integration"
+    test_plan: |
+      1. Delete .robro/.injected-skills.json if it exists (clean session state)
+      2. Create 7 skill files all matching keyword "test", build index
+      3. Pipe {"prompt":"test"} to skill-injector.mjs — verify output contains exactly 5 project-skill tags
+      4. Verify .robro/.injected-skills.json now lists 5 skill names
+      5. Pipe {"prompt":"test"} again — verify output has NO project-skill tags (all 5 already injected per .injected-skills.json)
+      6. Clean up: delete .robro/.injected-skills.json and test skill files
+    passes: true
+
+  - id: C15
+    section: S3
+    phase: 3
+    task: "3.2"
+    description: "Level-up skill writing — level-up phase instructions include Learned Skill type"
+    acceptance_criteria: "skills/do/level-up-phase.md contains a 'Learned Skill' section with instructions to write .robro/skills/*.md with JSON frontmatter, and rebuild the skill index."
+    test_type: "manual"
+    test_plan: |
+      1. Read skills/do/level-up-phase.md
+      2. Verify section titled "Type: Learned Skill" exists
+      3. Verify instructions reference JSON frontmatter with name, triggers, description, created_by fields
+      4. Verify instructions include skill index rebuild step
+    passes: true
+
+  - id: C16
+    section: S3
+    phase: 3
+    task: "3.3"
+    description: "User-scoped skills — ~/.robro/skills/ scanned and included in index"
+    acceptance_criteria: "Skill index builder scans both .robro/skills/ and ~/.robro/skills/. User-scoped entries have scope 'user'. Project-scoped skills take priority in injection."
+    test_type: "integration"
+    test_plan: |
+      1. Create a skill in a temp dir simulating ~/.robro/skills/
+      2. Run index builder with the user path overridden
+      3. Verify index contains the entry with scope: "user"
+    passes: true
+
+  - id: C17
+    section: S4
+    phase: 4
+    task: "4.1"
+    description: "Rationalization tables — present in brief phase with >= 6 rows"
+    acceptance_criteria: "skills/do/brief-phase.md contains a 'Rationalization Tables' section with a table of >= 6 rationalization/rebuttal pairs."
+    test_type: "manual"
+    test_plan: |
+      1. Read skills/do/brief-phase.md
+      2. Verify section titled "Rationalization Tables" exists
+      3. Count table rows (excluding header) — should be >= 6
+    passes: true
+
+  - id: C18
+    section: S4
+    phase: 4
+    task: "4.2"
+    description: "Verification-before-completion gate — mandatory verification in builder agent"
+    acceptance_criteria: "agents/builder.md contains a 'Verification Gate (MANDATORY)' section requiring verification command execution before claiming DONE."
+    test_type: "manual"
+    test_plan: |
+      1. Read agents/builder.md
+      2. Verify section titled "Verification Gate (MANDATORY)" exists
+      3. Verify it states DONE requires verification evidence
+      4. Verify it appears before the Status Protocol section
+    passes: true
+
+  - id: C19
+    section: S4
+    phase: 4
+    task: "4.3"
+    description: "Prompt sanitization — keyword-detector strips XML, URLs, code blocks before matching"
+    acceptance_criteria: "scripts/keyword-detector.sh contains a sanitize_prompt function that strips XML tags, URLs, file paths, and code blocks. The function is called before keyword matching."
+    test_type: "unit"
+    test_plan: |
+      1. grep -c 'sanitize_prompt' scripts/keyword-detector.sh — should be >= 2 (definition + usage)
+      2. Test: echo '<tag>idea</tag> https://example.com /path/file.ts' through sanitize_prompt — should output lowercase text without tags/URLs/paths
+    passes: true
+
+  - id: C20
+    section: S4
+    phase: 4
+    task: "4.4"
+    description: "Context budget priority — rules present in builder, reviewer, architect agents"
+    acceptance_criteria: "agents/builder.md, agents/reviewer.md, and agents/architect.md each contain a 'Context Budget Priority' section with a numbered priority list."
+    test_type: "manual"
+    test_plan: |
+      1. grep -c 'Context Budget Priority' agents/builder.md agents/reviewer.md agents/architect.md
+      2. All three should return 1
+    passes: true
+
+  - id: C21
+    section: S4
+    phase: 4
+    task: "4.5"
+    description: "SubagentStop verification — hook checks for status protocol compliance"
+    acceptance_criteria: "scripts/verify-deliverables.sh exists and is executable. hooks/hooks.json has a SubagentStop entry. Hook emits advisory when subagent output lacks standard Status line."
+    test_type: "integration"
+    test_plan: |
+      1. echo '{"tool_result":"task complete"}' | bash scripts/verify-deliverables.sh — should emit advisory
+      2. echo '{"tool_result":"**Status**: DONE"}' | bash scripts/verify-deliverables.sh — should produce no output
+      3. jq '.SubagentStop' hooks/hooks.json — should show the hook entry
+    passes: true
+
+  - id: C22
+    section: S5
+    phase: 5
+    task: "5.1"
+    description: "Version update check — SessionStart emits notice when local < remote"
+    acceptance_criteria: "scripts/update-check.mjs exists. hooks/hooks.json has a second SessionStart entry for it. Script creates ~/.robro/.update-cache.json with 24h TTL. Network failure causes silent exit (no error output)."
+    test_type: "integration"
+    test_plan: |
+      1. Run: node scripts/update-check.mjs < /dev/null — should exit without error
+      2. Verify ~/.robro/.update-cache.json exists after first run
+      3. Run again immediately — should use cache (no network call)
+      4. jq '.SessionStart' hooks/hooks.json — should show 2 entries
+    passes: true
+
+  - id: C23
+    section: S5
+    phase: 5
+    task: "5.2"
+    description: "Template validation — script validates agent refs and version markers"
+    acceptance_criteria: "scripts/validate-templates.sh exists and is executable. Running it on a valid codebase exits 0 with 'PASS'. Running after removing an agent file exits 1 with specific error."
+    test_type: "integration"
+    test_plan: |
+      1. Run: bash scripts/validate-templates.sh — should exit 0, output "PASS"
+      2. Temporarily rename agents/wonder.md, re-run — should exit 1 with error mentioning "wonder"
+      3. Restore the file
+    passes: true
+
+  - id: C24
+    section: S5
+    phase: 5
+    task: "5.3"
+    description: "CLAUDE.md ambiguity table — shows both greenfield and brownfield formulas"
+    acceptance_criteria: "CLAUDE.md Ambiguity Scoring section contains both 'Greenfield' and 'Brownfield' labels with their respective weight formulas."
+    test_type: "manual"
+    test_plan: |
+      1. Read the Ambiguity Scoring section in CLAUDE.md
+      2. Verify both "Greenfield" (40/30/30) and "Brownfield" (35/25/25/15) formulas appear
+    passes: true
+
+  - id: C25
+    section: S5
+    phase: 5
+    task: "5.4"
+    description: "Setup v0.2.0 — setup skill handles migration with new directories and gitignore rules"
+    acceptance_criteria: "skills/setup/SKILL.md and claude-md-template.md reference .robro/skills/ directory creation, new .gitignore rules for state files, and descriptions of Wonder agent, learned skills, oscillation detection."
+    test_type: "manual"
+    test_plan: |
+      1. Read skills/setup/claude-md-template.md
+      2. Verify it mentions: Wonder agent, learned skills, oscillation detection, skill injection
+      3. Verify .gitignore rules include .skill-index.json, .oscillation-state.json, .injected-skills.json
+    passes: true
+
+  - id: C26
+    section: S5
+    phase: 5
+    task: "5.5"
+    description: "Version bump — plugin.json version is 0.2.0"
+    acceptance_criteria: "jq -r '.version' .claude-plugin/plugin.json outputs '0.2.0'. sync-versions.sh copies it to marketplace.json."
+    test_type: "unit"
+    test_plan: |
+      1. Run: jq -r '.version' .claude-plugin/plugin.json — should output "0.2.0"
+      2. Run: bash scripts/sync-versions.sh
+      3. Run: jq -r '.version' .claude-plugin/marketplace.json — should output "0.2.0"
+    passes: true

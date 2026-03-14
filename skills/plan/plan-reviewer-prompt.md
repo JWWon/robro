@@ -42,9 +42,14 @@ Agent tool (general-purpose):
 
     ## Output
 
-    **Status:** APPROVED | ISSUES_FOUND
+    **Status:** DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 
-    **Issues (if any):**
+    Use DONE if the plan passes all checks.
+    Use DONE_WITH_CONCERNS if there are issues that should be addressed (list them).
+    Use NEEDS_CONTEXT if you need more information to complete the review.
+    Use BLOCKED if the plan has fundamental problems preventing review.
+
+    **Concerns (if DONE_WITH_CONCERNS):**
     - [Phase.Task or section]: [specific issue] — [why it matters]
 
     **Recommendations (advisory, don't block approval):**

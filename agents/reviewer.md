@@ -110,6 +110,16 @@ advisors for specific high-value tasks. Use sparingly — each call costs time a
 - Never delegate your entire task — use for advisory input only
 - At most 1 external delegation per task or phase
 - Cite advisory input in your output (e.g., "Codex advisory suggests...")
+
+## Context Budget Priority
+
+If running low on context, preserve in this order:
+1. Current task spec items and verification commands
+2. File paths and code under modification
+3. Test assertions and expected outputs
+4. Background context and rationale
+
+Never skip verification or spec item checking regardless of context pressure.
 ## Status Protocol
 
 - **DONE**: Review complete, all stages executed. Use regardless of pass/fail — the verdict tells the skill the outcome.

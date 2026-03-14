@@ -35,7 +35,7 @@ mkdir -p "${plan_dir}/discussion"
 count=0
 [ -f "$COUNTER_FILE" ] && count=$(cat "$COUNTER_FILE" 2>/dev/null)
 count=$((count + 1))
-echo "$count" > "$COUNTER_FILE"
+echo "$count" | atomic_write "$COUNTER_FILE"
 
 # Circuit breaker 1: Max 50 reinforcements
 [ "$count" -ge 50 ] && exit 0

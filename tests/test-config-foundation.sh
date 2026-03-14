@@ -20,7 +20,7 @@ pass() {
 
 # ===========================================================================
 # C1: load-config.sh exists, is executable, passes bash -n,
-#     exports SESSIONS_DIR='.robro/sessions' and robro_config function
+#     exports SESSIONS_DIR (absolute path to .robro/sessions) and robro_config function
 # ===========================================================================
 
 LOAD_CONFIG="$REPO_ROOT/scripts/lib/load-config.sh"
@@ -47,10 +47,10 @@ fi
 if [[ -f "$LOAD_CONFIG" ]]; then
   (
     source "$LOAD_CONFIG"
-    if [[ "$SESSIONS_DIR" == ".robro/sessions" ]]; then
-      echo "PASS: SESSIONS_DIR='.robro/sessions'"
+    if [[ "$SESSIONS_DIR" == *"/.robro/sessions" ]] && [[ "$SESSIONS_DIR" == /* ]]; then
+      echo "PASS: SESSIONS_DIR ends with '/.robro/sessions' and is absolute: $SESSIONS_DIR"
     else
-      echo "FAIL: SESSIONS_DIR expected '.robro/sessions', got '$SESSIONS_DIR'"
+      echo "FAIL: SESSIONS_DIR expected absolute path ending in '/.robro/sessions', got '$SESSIONS_DIR'"
       exit 1
     fi
   ) && PASSES=$((PASSES + 1)) || FAILURES=$((FAILURES + 1))

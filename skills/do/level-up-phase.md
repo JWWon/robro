@@ -128,6 +128,43 @@ description: {when and why to use this skill}
 5. If the file was a skill directory (`SKILL.md` + supporting files), remove the entire directory
 6. Log the removal: `REMOVED: {path} — {reason}`
 
+**Learned Skill** — When the retro-analyst identifies a project-specific, hard-won problem-solving heuristic that meets ALL of these criteria:
+- Is NOT generic (must reference actual files, error messages, or patterns from this specific codebase)
+- Is NOT already documented in existing rules or CLAUDE.md
+- Would save significant time if remembered in future sessions
+
+Write to `.robro/skills/{kebab-name}.md` with JSON frontmatter:
+
+```markdown
+---
+{
+  "name": "{kebab-name}",
+  "description": "One-line description of what this skill teaches",
+  "triggers": ["keyword1", "keyword phrase 2"],
+  "created_by": "level-up",
+  "plan": "{current plan slug}"
+}
+---
+
+## {Skill Title}
+
+{Step-by-step procedure with specific file paths and commands.
+Must reference actual codebase artifacts — no generic advice.}
+```
+
+Required fields: `name`, `triggers` (2-5 keyword phrases that would appear in a prompt when this knowledge is needed), `description`.
+Optional: `created_by`, `plan`.
+
+After writing the skill file, rebuild the skill index:
+1. Read `.robro/.skill-index.json` if it exists
+2. Add a new entry with `path`, `name`, `triggers`, `description`, `scope: "project"`
+3. Write back atomically (write to temp file, then rename)
+
+Quality gates for learned skills:
+- Trigger keywords must be specific enough to avoid false positives (e.g., "drizzle migration" not just "migration")
+- Description must be actionable in one line
+- Body must contain at least one specific file path or command from this codebase
+
 ### 4. Quality Gate (D7)
 
 For every file created or updated:
@@ -194,6 +231,4 @@ worktree: .claude/worktrees/{slug}
 detail: "Running convergence checks"
 next: "Evaluate 5 convergence gates and pathology detection"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```

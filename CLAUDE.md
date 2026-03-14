@@ -180,6 +180,33 @@ The immutability rule from `/robro:plan` (items can never be removed or edited) 
 - **Hooks** (`hooks/hooks.json`): Event handlers for `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, etc. Types: `command`, `prompt`, `agent`.
 - **`${CLAUDE_PLUGIN_ROOT}`**: Environment variable resolving to plugin install path. Use in hooks, MCP configs, and scripts.
 
+### Ambiguity Scoring
+
+Used by idea and plan skills to gate progression.
+
+**Greenfield weights** (no existing codebase):
+
+| Dimension | Weight |
+|-----------|--------|
+| Goal Clarity | 40% |
+| Constraint Clarity | 30% |
+| Success Criteria | 30% |
+
+Formula: `ambiguity = 1 - (goal*0.40 + constraint*0.30 + criteria*0.30)`
+
+**Brownfield weights** (existing codebase — adds Context Clarity):
+
+| Dimension | Weight |
+|-----------|--------|
+| Goal Clarity | 35% |
+| Constraint Clarity | 25% |
+| Success Criteria | 25% |
+| Context Clarity | 15% |
+
+Formula: `ambiguity = 1 - (goal*0.35 + constraint*0.25 + criteria*0.25 + context*0.15)`
+
+Threshold: ambiguity ≤ 0.1 (formula: `1 - weighted_sum`).
+
 ---
 
 ## Development

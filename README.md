@@ -113,7 +113,7 @@ Skills (user-facing)          Agents (workers)
 
 ### Agents
 
-Twelve agents, each with a specialized role. Loaded on-demand, never preloaded:
+Thirteen agents, each with a specialized role. Loaded on-demand, never preloaded:
 
 | Agent | Role | Used By |
 |-------|------|---------|
@@ -128,6 +128,7 @@ Twelve agents, each with a specialized role. Loaded on-demand, never preloaded:
 | **Reviewer** | 3-stage peer review: mechanical, semantic, consensus | do |
 | **Retro Analyst** | Structured sprint retrospective with pattern extraction | do |
 | **Conflict Resolver** | Merge conflict resolution from parallel dispatches | do |
+| **Wonder** | Blind spot detection at sprint boundaries -- surfaces unknown unknowns | do |
 
 Challenge agents (Contrarian, Simplifier, Ontologist) are applied as **inline lenses** first -- reading the agent's perspective and applying it in-place. Only escalated to a full subagent when deeper investigation is needed.
 
@@ -140,9 +141,13 @@ As conversations grow long, Claude compresses earlier messages -- including skil
 | **Pipeline guard** | Re-injects planning rules every prompt so the agent never forgets its current phase |
 | **Spec gate** | Warns if code is being written without an approved spec |
 | **Drift monitor** | Tracks progress against the active spec during implementation |
+| **Oscillation detector** | Tracks same-file edit counts and warns when repeated cycles suggest a lateral shift is needed |
+| **Skill injector** | Loads learned skills matching prompt keywords into the session |
 | **Stop hook** | Auto-continues do execution across context limits with circuit breakers |
 | **Error tracker** | Monitors recent errors for rate limit detection |
 | **Pre-compact** | Persists pipeline state before context compression |
+| **Update check** | Notifies on session start when a newer robro version is available |
+| **Deliverable verifier** | Advisory check that subagent output includes the standard Status protocol |
 
 The injection pattern is "you are HERE, do THIS next" -- not a rules dump.
 

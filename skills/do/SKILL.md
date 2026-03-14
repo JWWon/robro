@@ -66,8 +66,6 @@ worktree: .claude/worktrees/{slug}
 detail: "Gathering context, planning parallel levels"
 next: "Dispatch researcher pre-flight, scan project rules"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```
 
 This file drives the stop hook (auto-continue) and all pipeline hooks (session-start, pipeline-guard, pre-compact). Update it at EVERY transition.

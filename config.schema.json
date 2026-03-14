@@ -179,6 +179,30 @@
           "description": "Maximum review iterations in plan skill. 0 = no cap (quality-driven).",
           "default": 0,
           "minimum": 0
+        },
+        "build_progress_max_sprints": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "description": "Maximum sprint sections to inject from build-progress.md into retro context"
+        },
+        "oscillation_cycle_threshold": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 2,
+          "description": "Number of same-file edit cycles before oscillation warning triggers"
+        },
+        "wonder_min_sprint": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "description": "Minimum sprint number before Wonder agent can be dispatched"
+        },
+        "skill_injection_cap": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "description": "Maximum learned skills injected per session"
         }
       }
     },

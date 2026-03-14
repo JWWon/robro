@@ -64,7 +64,7 @@ fi
 
 # If no active status found in sessions dir, check worktrees for active plans
 if [ -z "$status_file" ] || [ -z "$skill" ] || [ "$skill" = "none" ]; then
-  WORKTREE_DIR=".claude/worktrees"
+  WORKTREE_DIR="${PROJECT_ROOT}/.claude/worktrees"
   if [ -d "$WORKTREE_DIR" ]; then
     for wt_dir in "$WORKTREE_DIR"/*/; do
       [ -d "$wt_dir" ] || continue

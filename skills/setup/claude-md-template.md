@@ -67,6 +67,10 @@ Robro hooks fire fresh on every event to inject focused guidance that survives c
 | PreCompact | Persist pipeline state before context compression |
 | Stop | Auto-continue do execution with circuit breakers |
 | PostToolUseFailure | Track recent errors for rate limit detection |
+| PostToolUse (Write/Edit) | Oscillation detection — tracks same-file edit counts and warns when cycles suggest the approach needs a lateral shift |
+| UserPromptSubmit | Skill injection — loads learned skills from `.robro/skills/` matching prompt keywords into the active session |
+| SessionStart | Update check — notifies when a newer robro version is available (cached to `~/.robro/.update-cache.json`) |
+| SubagentStop | Deliverable verification — advisory check that subagent output includes the standard Status protocol line |
 
 ### Build Agents
 
@@ -79,19 +83,27 @@ Robro hooks fire fresh on every event to inject focused guidance that survives c
 | Researcher | Context gathering and JIT knowledge |
 | Architect | Semantic review |
 | Critic | Consensus gate |
+| Wonder | Exploratory insight agent — surfaces unexpected connections and reframes problems from novel angles |
 
 ### Ambiguity Scoring
 
-Used by idea and plan skills to gate progression:
+Used by idea and plan skills to gate progression.
 
-| Dimension | Weight |
-|-----------|--------|
-| Goal Clarity | 35% |
-| Constraint Clarity | 25% |
-| Success Criteria | 25% |
-| Context Clarity | 15% |
+**Greenfield** (no existing codebase): Goal 40%, Constraints 30%, Criteria 30%.
+**Brownfield** (existing codebase): Goal 35%, Constraints 25%, Criteria 25%, Context 15%.
 
 Threshold: ambiguity ≤ 0.1 (formula: `1 - weighted_sum`).
+
+### Learned Skills (v0.2.0+)
+
+Robro supports project-specific learned skills stored in `.robro/skills/`. During build cycles, the retro phase can extract reusable patterns and save them as skill files. These are automatically indexed (`.robro/.skill-index.json`) and injected into future sessions.
+
+Customization follows a 4-tier hierarchy (highest priority first):
+
+1. **Session overrides** — per-session status.yaml directives
+2. **Project config** — `.robro/config.json` settings
+3. **Learned skills** — `.robro/skills/` discovered patterns
+4. **Plugin defaults** — built-in robro configuration
 
 ### Resuming Interrupted Work
 

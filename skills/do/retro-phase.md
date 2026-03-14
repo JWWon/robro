@@ -85,6 +85,4 @@ worktree: .claude/worktrees/{slug}
 detail: "Applying spec mutations and project evolution"
 next: "Apply proposed mutations, then execute 5-step level-up flow"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```

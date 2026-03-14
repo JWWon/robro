@@ -23,8 +23,6 @@ worktree: .claude/worktrees/{slug}
 detail: "Reading current state"
 next: "Identify remaining items and plan sprint scope"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```
 
 ### 1.1. Load Model Configuration
@@ -141,6 +139,50 @@ For each remaining task this sprint:
 3. If context7 doesn't have the library, use web search as fallback
 4. Compile fetched knowledge into a JIT context bundle for builder agents
 
+### 4.5. Wonder Phase (Conditional)
+
+Dispatch the Wonder agent if ANY of these conditions are true:
+- Sprint >= 3 (configurable via `thresholds.wonder_min_sprint` in .robro/config.json, default 3)
+- No spec items were flipped to `passes: true` in the previous sprint
+- The oscillation detector fired during the previous sprint (check `.robro/.oscillation-state.json` — if it exists and has any entry with count >= threshold)
+
+If none of these conditions are met, skip Wonder and proceed to step 5.
+
+If triggered, dispatch:
+
+```
+Agent(
+  subagent_type: "robro:wonder",
+  prompt: "Analyze blind spots for sprint {N}.
+
+Spec status:
+{paste spec.yaml checklist section with current passes values}
+
+Sprint file changes:
+{output of: git diff --stat HEAD~{commits_this_sprint}}
+
+Previous retro Knowledge Gaps:
+{paste Knowledge Gaps section from discussion/retro-sprint-{N-1}.md, or 'N/A — first sprint'}
+
+Oscillation warnings:
+{paste .robro/.oscillation-state.json content if exists, or 'None'}",
+  model: "{MODEL_CONFIG.wonder or MODEL_CONFIG.default}"
+)
+```
+
+Route on Wonder status:
+- **DONE**: Read `blind_spots` and `lateral_recommendation` from output.
+  - If `lateral_recommendation` is not null, dispatch that challenge agent (contrarian, simplifier, or researcher) inline before proceeding to step 5. Log the lateral shift to build-progress.md.
+  - Log all blind spots to build-progress.md under "### Wonder".
+- **DONE_WITH_CONCERNS**: Log concerns, proceed with noted gaps.
+- **NEEDS_CONTEXT**: Provide missing info and re-dispatch once.
+- **BLOCKED**: Log blocker, proceed without Wonder input.
+
+After Wonder completes (or is skipped), clear the oscillation state for the new sprint:
+```bash
+rm -f "${PROJECT_ROOT}/.robro/.oscillation-state.json"
+```
+
 ### 5. Plan Parallel Execution Levels
 
 Analyze the File Map from the Brief and task dependencies:
@@ -182,8 +224,20 @@ worktree: .claude/worktrees/{slug}
 detail: "Starting Level 1 execution"
 next: "Dispatch builder agents for Level 1 tasks"
 gate: "All 5 convergence gates pass"
-attempt: 1
-reinforcement_count: 0
 ```
 
 Log transition to build-progress.md: "Brief complete. Starting Heads-down."
+
+## Rationalization Tables
+
+These tables map common agent rationalizations to rebuttals. Review at the start of each sprint. These are compression-resistant — even if earlier context is compressed, this table remains visible.
+
+| Rationalization | Rebuttal |
+|----------------|----------|
+| "This is a simple change, I don't need to run tests" | Every change needs test verification. Simple changes cause the worst bugs. |
+| "I'll fix the tests later" | TDD is non-negotiable. Write the test FIRST. |
+| "The spec item is basically passing" | `passes: false` means false. Flip it only after verification command succeeds. |
+| "I should refactor this while I'm here" | Stay on task. Only modify files listed in the current task's spec items. |
+| "The verification step isn't relevant for this change" | Verification-before-completion is mandatory. Run the exact command specified. |
+| "I can skip the commit — I'll batch them later" | Commit after each task. Atomic commits enable rollback. |
+| "This code is good enough" | Good enough is not verified. Run the test plan. Check the acceptance criteria. |

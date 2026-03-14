@@ -1,0 +1,27 @@
+2026-03-14T15:30:00+09:00	SPRINT:1	FLIP	C1	passes: true	REASON: CWD normalization verified — all scripts use PROJECT_ROOT, no bare relative paths
+2026-03-14T15:30:00+09:00	SPRINT:1	FLIP	C2	passes: true	REASON: atomic_write() added to load-config.sh, used in stop-hook.sh and error-tracker.sh
+2026-03-14T15:30:00+09:00	SPRINT:1	FLIP	C3	passes: true	REASON: 0 remaining attempt/reinforcement_count references in skills/do/
+2026-03-14T15:30:00+09:00	SPRINT:1	FLIP	C4	passes: true	REASON: plugin.json declares skills, agents, hooks paths
+2026-03-14T15:30:00+09:00	SPRINT:1	FLIP	C5	passes: true	REASON: config.schema.json has all 4 new threshold fields
+2026-03-14T15:30:00+09:00	SPRINT:1	FLIP	C6	passes: true	REASON: truncate_build_progress() function defined and tested
+2026-03-14T16:00:00+09:00	SPRINT:2	FLIP	C7	passes: true	REASON: oscillation-detector.mjs created, hooks.json registered, syntax valid, config threshold reading implemented
+2026-03-14T16:00:00+09:00	SPRINT:2	FLIP	C8	passes: true	REASON: agents/wonder.md created with Input/Output Contract sections
+2026-03-14T16:00:00+09:00	SPRINT:2	FLIP	C9	passes: true	REASON: Wonder Phase (Conditional) section added to brief-phase.md with 3 trigger conditions
+2026-03-14T16:00:00+09:00	SPRINT:2	FLIP	C10a	passes: true	REASON: Reviewer templates use DONE/BLOCKED protocol, 0 APPROVED references
+2026-03-14T16:00:00+09:00	SPRINT:2	FLIP	C10b	passes: true	REASON: Plan SKILL.md routes on standard protocol, 0 APPROVED/ISSUES_FOUND references
+2026-03-14T16:30:00+09:00	SPRINT:3	FLIP	C11	passes: true	REASON: skill-injector.mjs parses JSON frontmatter correctly
+2026-03-14T16:30:00+09:00	SPRINT:3	FLIP	C12	passes: true	REASON: Index cache built from skill files with all required fields
+2026-03-14T16:30:00+09:00	SPRINT:3	FLIP	C13	passes: true	REASON: Matching skills injected on UserPromptSubmit with project-skill tags
+2026-03-14T16:30:00+09:00	SPRINT:3	FLIP	C14	passes: true	REASON: 5-skill cap enforced with session dedup via .injected-skills.json
+2026-03-14T16:30:00+09:00	SPRINT:3	FLIP	C15	passes: true	REASON: Level-up phase has Learned Skill section with JSON frontmatter + index rebuild
+2026-03-14T16:30:00+09:00	SPRINT:3	FLIP	C16	passes: true	REASON: User-scoped skills scanned via homedir(), marked scope 'user', project priority
+2026-03-15T00:30:00+09:00	SPRINT:4	FLIP	C17	passes: true	REASON: Rationalization tables with 7 rows added to brief-phase.md
+2026-03-15T00:30:00+09:00	SPRINT:4	FLIP	C18	passes: true	REASON: Verification Gate (MANDATORY) section added to builder.md before Status Protocol
+2026-03-15T00:30:00+09:00	SPRINT:4	FLIP	C19	passes: true	REASON: sanitize_prompt function added (2 refs in keyword-detector.sh)
+2026-03-15T00:30:00+09:00	SPRINT:4	FLIP	C20	passes: true	REASON: Context Budget Priority in builder, reviewer, architect (3/3)
+2026-03-15T00:30:00+09:00	SPRINT:4	FLIP	C21	passes: true	REASON: verify-deliverables.sh created, SubagentStop hook registered
+2026-03-15T01:00:00+09:00	SPRINT:5	FLIP	C22	passes: true	REASON: update-check.mjs created, hooks.json has 2 SessionStart entries, syntax valid
+2026-03-15T01:00:00+09:00	SPRINT:5	FLIP	C23	passes: true	REASON: validate-templates.sh passes on valid codebase
+2026-03-15T01:00:00+09:00	SPRINT:5	FLIP	C24	passes: true	REASON: CLAUDE.md shows both Greenfield and Brownfield formulas
+2026-03-15T01:00:00+09:00	SPRINT:5	FLIP	C25	passes: true	REASON: Setup skill updated with Wonder, learned skills, oscillation, gitignore rules
+2026-03-15T01:00:00+09:00	SPRINT:5	FLIP	C26	passes: true	REASON: Version 0.2.0 in plugin.json and marketplace.json
