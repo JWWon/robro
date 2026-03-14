@@ -1,0 +1,10 @@
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C1	passes: true	REASON: Lockfile detection verified via integration tests
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C2	passes: true	REASON: CLI fallback verified (returned 'bun' on this system)
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C3	passes: true	REASON: bun.lockb detection verified
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C4	passes: true	REASON: bash -n passes, file is executable
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C5	passes: true	REASON: grep confirms --agent claude-code -y in SKILL.md
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C6	passes: true	REASON: detect-pkg-manager.sh ref, all 4 pkg managers, .yarnrc.yml present
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C7	passes: true	REASON: agent-browser install present after binary install step
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C8	passes: true	REASON: 3-component reporting section present
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C9	passes: true	REASON: old 'claude plugin install' fallback removed
+2026-03-14T14:30:00Z	SPRINT:1	FLIP	C10	passes: true	REASON: Idempotency by design: Step 2b detection + which check + idempotent CLI

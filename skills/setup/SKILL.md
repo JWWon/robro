@@ -150,16 +150,65 @@ Create the file `.claude/rules/github.md` in the project root using the Write to
 ```
 
 **Skill: agent-browser**
+
+Agent-browser installation has 3 sub-steps: skill install, binary install, and Chrome download. Each reports independently; failures warn but don't block the rest of setup.
+
+**Sub-step 1: Install the skill (Claude Code only)**
 ```bash
-npx skills add vercel-labs/agent-browser --skill agent-browser
+npx skills add vercel-labs/agent-browser --skill agent-browser --agent claude-code -y
 ```
 
 If the `npx skills add` command fails (non-zero exit code), report the error and provide manual install instructions as fallback:
 
-> **agent-browser install failed.** You can install it manually:
+> **agent-browser skill install failed.** You can install it manually:
 > 1. Visit https://github.com/vercel-labs/agent-browser
 > 2. Follow the installation instructions in the README
-> 3. Or run: `claude plugin install agent-browser`
+> 3. Or run: `npx skills add vercel-labs/agent-browser --skill agent-browser --agent claude-code -y`
+
+**Sub-step 2: Install the binary**
+
+First, check if agent-browser is already installed:
+```bash
+which agent-browser
+```
+
+If `which agent-browser` succeeds (exit code 0), skip to sub-step 3.
+
+If not installed, detect the project's package manager:
+```bash
+PKG_MANAGER=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/detect-pkg-manager.sh" "$PROJECT_ROOT")
+```
+
+Then install the binary globally using the detected package manager. The install command varies per manager:
+
+| Package Manager | Install Command |
+|----------------|----------------|
+| bun | `bun add -g agent-browser` |
+| pnpm | `pnpm add -g agent-browser` |
+| yarn | Check if `.yarnrc.yml` exists in `$PROJECT_ROOT`. If YES (Yarn Berry): use `npm install -g agent-browser` instead (Yarn Berry removed `global add`). If NO (Yarn Classic): use `yarn global add agent-browser`. |
+| npm | `npm install -g agent-browser` |
+
+If the binary install fails, report the error and provide manual instructions:
+
+> **agent-browser binary install failed.** Install manually: `npm install -g agent-browser`
+
+If the binary install fails, skip sub-step 3 (Chrome download requires the binary).
+
+**Sub-step 3: Download Chrome**
+
+Run the Chrome download (this command is idempotent — it checks if Chrome is already present and skips if so):
+```bash
+agent-browser install
+```
+
+If the Chrome download fails, warn but don't block:
+
+> **Chrome download failed.** Run `agent-browser install` manually when you have internet access.
+
+**Reporting**: After all sub-steps, report the status of each:
+- Skill: installed / already configured / failed
+- Binary: installed / already installed / failed
+- Chrome: downloaded / already present / failed / skipped (binary not installed)
 
 #### 2e. Report Results
 

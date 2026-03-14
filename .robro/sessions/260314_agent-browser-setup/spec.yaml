@@ -1,0 +1,217 @@
+meta:
+  id: "260314_agent-browser-setup"
+  idea: idea.md
+  plan: plan.md
+  created: "2026-03-14T13:00:00Z"
+  updated: "2026-03-14T13:00:00Z"
+  ambiguity_score: 0.10
+  complexity: "standard"
+
+goal: "Update the robro setup skill to install agent-browser skills exclusively for Claude Code and auto-install the agent-browser binary using the project's detected package manager."
+
+constraints:
+  - "Shell scripts must use ${CLAUDE_PLUGIN_ROOT} for paths"
+  - "Scripts must be executable and pass bash -n syntax check"
+  - "Package manager detection: lockfile-first, CLI fallback, npm as final fallback"
+  - "Detection priority: bun > pnpm > yarn > npm"
+  - "detect-pkg-manager.sh must be standalone (not dependent on other robro scripts)"
+  - "Global install command mapping: bun add -g, pnpm add -g, yarn global add (classic only), npm install -g"
+  - "Yarn Berry detection via .yarnrc.yml — fall back to npm for global installs"
+
+non_goals:
+  - "Replace npx for one-shot package runners (MCP installs, skills CLI)"
+  - "Interactive package manager selection"
+  - "Global scope for agent-browser skill — project-level only"
+  - "Support for non-Node.js package managers"
+
+context:
+  type: "brownfield"
+  tech_stack:
+    - "Bash (shell scripts)"
+    - "Claude Code plugin SKILL.md (instructional markdown)"
+  existing_patterns:
+    - "Scripts use #!/usr/bin/env bash and SCRIPT_DIR pattern"
+    - "Standalone scripts (manage-claudemd.sh, sync-versions.sh) don't source shared libs"
+    - "Hook scripts source scripts/lib/load-config.sh for session utilities"
+    - "SKILL.md is instructional — Claude Code executes the bash commands via its Bash tool"
+  key_files:
+    - "skills/setup/SKILL.md"
+    - "scripts/manage-claudemd.sh (standalone script precedent)"
+    - "scripts/lib/load-config.sh (shared lib — NOT used by this script)"
+
+architecture_decisions:
+  - decision: "Script outputs manager name only"
+    rationale: "Clean separation — caller maps name to install command"
+    alternatives: ["Output full install command string"]
+  - decision: "Yarn Berry detection via .yarnrc.yml"
+    rationale: "yarn global add removed in Berry v2+"
+    alternatives: ["Ignore Berry and let it fail"]
+  - decision: "Check both bun.lock and bun.lockb"
+    rationale: "Bun v1.2+ uses text format, older uses binary"
+    alternatives: ["Only check bun.lock"]
+  - decision: "Always run agent-browser install"
+    rationale: "CLI is idempotent internally"
+    alternatives: ["Check ~/.agent-browser/browsers/ manually"]
+  - decision: "Binary fail → skip Chrome download"
+    rationale: "Chrome download requires the binary"
+    alternatives: ["Run each step independently"]
+  - decision: "No-lockfile fallback: npm"
+    rationale: "npm guaranteed by Node.js / Claude Code"
+    alternatives: ["Error out and warn user"]
+
+sections:
+  - id: S1
+    name: "Package Manager Detection"
+    description: "Shared shell script that detects the project's package manager via lockfile presence and CLI availability"
+    requirements:
+      - "Lockfile detection in priority order: bun.lock/bun.lockb > pnpm-lock.yaml > yarn.lock > package-lock.json"
+      - "CLI fallback when no lockfile found: bun > pnpm > yarn > npm"
+      - "npm as final fallback (always available)"
+      - "Standalone: no dependency on other robro scripts"
+
+  - id: S2
+    name: "Setup Skill Update"
+    description: "Update SKILL.md to use --agent claude-code flag, add binary auto-install, and handle Yarn Berry"
+    requirements:
+      - "Skills add command uses --agent claude-code -y flags"
+      - "Binary install uses detected package manager"
+      - "Chrome download via agent-browser install"
+      - "Warn and continue on partial failure"
+      - "Per-component reporting"
+      - "Idempotent re-run"
+
+checklist:
+  - id: C1
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "detect-pkg-manager.sh returns correct manager for each lockfile type"
+    acceptance_criteria: "Running the script in a directory with bun.lock outputs 'bun', with pnpm-lock.yaml outputs 'pnpm', with yarn.lock outputs 'yarn', with package-lock.json outputs 'npm'"
+    test_type: "integration"
+    test_plan: |
+      1. Create temp directories with each lockfile type
+      2. Run `bash scripts/detect-pkg-manager.sh <dir>` for each
+      3. Assert output matches expected manager name
+    passes: true
+
+  - id: C2
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "detect-pkg-manager.sh falls back to npm when no lockfile is found"
+    acceptance_criteria: "Running the script in an empty directory (no lockfiles) outputs a valid package manager name, defaulting to npm if no other manager CLI is available"
+    test_type: "integration"
+    test_plan: |
+      1. Create an empty temp directory with no lockfiles
+      2. Run `bash scripts/detect-pkg-manager.sh <dir>`
+      3. Assert output is one of: bun, pnpm, yarn, npm
+    passes: true
+
+  - id: C3
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "detect-pkg-manager.sh detects bun.lockb for older Bun projects"
+    acceptance_criteria: "Running the script in a directory with bun.lockb (no bun.lock) outputs 'bun'"
+    test_type: "integration"
+    test_plan: |
+      1. Create temp directory with only bun.lockb
+      2. Run `bash scripts/detect-pkg-manager.sh <dir>`
+      3. Assert output is 'bun'
+    passes: true
+
+  - id: C4
+    section: S1
+    phase: 1
+    task: "1.1"
+    description: "detect-pkg-manager.sh passes bash -n syntax check and is executable"
+    acceptance_criteria: "`bash -n scripts/detect-pkg-manager.sh` exits 0 AND file has executable permission"
+    test_type: "unit"
+    test_plan: |
+      1. Run `bash -n scripts/detect-pkg-manager.sh`
+      2. Assert exit code is 0
+      3. Run `test -x scripts/detect-pkg-manager.sh`
+      4. Assert exit code is 0
+    passes: true
+
+  - id: C5
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "SKILL.md uses --agent claude-code -y flags on skills add command"
+    acceptance_criteria: "The npx skills add command in SKILL.md contains '--agent claude-code -y'"
+    test_type: "manual"
+    test_plan: |
+      1. Run `grep -q '\-\-agent claude-code -y' skills/setup/SKILL.md`
+      2. Assert exit code is 0
+    passes: true
+
+  - id: C6
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "SKILL.md includes binary install step with package manager detection"
+    acceptance_criteria: "SKILL.md references detect-pkg-manager.sh via ${CLAUDE_PLUGIN_ROOT}/scripts/ path AND includes install commands for all 4 package managers (bun, pnpm, yarn, npm)"
+    test_type: "manual"
+    test_plan: |
+      1. Run `grep -q 'detect-pkg-manager.sh' skills/setup/SKILL.md`
+      2. Assert exit code is 0
+      3. Run `grep -q 'bun add -g' skills/setup/SKILL.md`
+      4. Assert exit code is 0
+      5. Run `grep -q '.yarnrc.yml' skills/setup/SKILL.md`
+      6. Assert exit code is 0
+    passes: true
+
+  - id: C7
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "SKILL.md includes agent-browser install for Chrome download"
+    acceptance_criteria: "SKILL.md contains 'agent-browser install' as a command to run after binary installation"
+    test_type: "manual"
+    test_plan: |
+      1. Read skills/setup/SKILL.md
+      2. Assert 'agent-browser install' command is present in the workflow
+      3. Assert it is sequenced AFTER the binary install step
+    passes: true
+
+  - id: C8
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "SKILL.md includes per-component reporting for agent-browser"
+    acceptance_criteria: "SKILL.md documents reporting for 3 components: skill status, binary status, and Chrome status"
+    test_type: "manual"
+    test_plan: |
+      1. Read skills/setup/SKILL.md
+      2. Assert reporting section lists skill, binary, and Chrome statuses
+      3. Assert each can report: installed/skipped/failed
+    passes: true
+
+  - id: C9
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "Old fallback text removed from SKILL.md"
+    acceptance_criteria: "No reference to 'claude plugin install agent-browser' exists in SKILL.md"
+    test_type: "manual"
+    test_plan: |
+      1. Run `! grep -q 'claude plugin install agent-browser' skills/setup/SKILL.md`
+      2. Assert exit code is 0 (pattern NOT found)
+    passes: true
+
+  - id: C10
+    section: S2
+    phase: 2
+    task: "2.1"
+    description: "Setup is idempotent — re-running produces no changes when already configured"
+    acceptance_criteria: "Running /robro:setup when agent-browser skill, binary, and Chrome are already installed results in all steps reporting 'already configured/installed/present' with no modifications"
+    test_type: "e2e"
+    test_plan: |
+      1. Run /robro:setup once to install everything
+      2. Run /robro:setup again
+      3. Assert skill reports 'already configured'
+      4. Assert binary reports 'already installed'
+      5. Assert Chrome reports 'already present'
+      6. Assert no files were modified
+    passes: true
