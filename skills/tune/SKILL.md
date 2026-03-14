@@ -2,6 +2,7 @@
 name: tune
 description: "Audit and optimize project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs). Use when you want to review your project setup for gaps, stale items, or improvement opportunities. Not for initial setup (use /robro:setup) or build-cycle analysis (happens automatically in /robro:do)."
 disable-model-invocation: true
+argument-hint: "(no arguments needed)"
 ---
 
 # Tune — Project Configuration Audit

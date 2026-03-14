@@ -19,26 +19,7 @@ source "${SCRIPT_DIR}/lib/load-config.sh"
 SPRINT_HARD_CAP=$(robro_config '.thresholds.sprint_hard_cap' '30')
 
 # Find active build status.yaml (at plan root, not discussion/)
-status_file=""
-if [ -d "$SESSIONS_DIR" ]; then
-  latest_mtime=0
-  for dir in "$SESSIONS_DIR"/*/; do
-    [ -d "$dir" ] || continue
-    candidate="${dir}status.yaml"
-    [ -f "$candidate" ] || continue
-    skill=$(grep "^skill:" "$candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
-    [ "$skill" = "do" ] || continue
-    if stat -f %m "$candidate" >/dev/null 2>&1; then
-      mtime=$(stat -f %m "$candidate")
-    else
-      mtime=$(stat -c %Y "$candidate")
-    fi
-    if [ "$mtime" -gt "$latest_mtime" ]; then
-      latest_mtime=$mtime
-      status_file=$candidate
-    fi
-  done
-fi
+status_file=$(find_latest_session "status.yaml" "skill" "do")
 
 # No active build — allow stop
 [ -z "$status_file" ] && exit 0
@@ -57,41 +38,32 @@ count=$((count + 1))
 echo "$count" > "$COUNTER_FILE"
 
 # Circuit breaker 1: Max 50 reinforcements
-if [ "$count" -ge 50 ]; then
-  exit 0
-fi
+[ "$count" -ge 50 ] && exit 0
 
 # Circuit breaker 2: Rate limit detection
 if [ -f "$ERROR_FILE" ]; then
-  recent_429=$(grep -ci "429\|rate.limit\|rate limit\|quota" "$ERROR_FILE" 2>/dev/null || echo "0")
-  if [ "$recent_429" -gt 0 ]; then
-    exit 0
-  fi
+  recent_429=$(grep -ci '429\|rate[_. ]limit\|quota' "$ERROR_FILE" 2>/dev/null || echo "0")
+  [ "$recent_429" -gt 0 ] && exit 0
 fi
 
 # Circuit breaker 3: stop_hook_active + rapid consecutive blocks
-# Lower threshold (5) prevents noisy loops when waiting for background agents
-if [ "$STOP_ACTIVE" = "true" ] && [ "$count" -ge 5 ]; then
-  exit 0
-fi
+[ "$STOP_ACTIVE" = "true" ] && [ "$count" -ge 5 ] && exit 0
 
 # Circuit breaker 4: Sprint hard cap
-sprint=$(grep "^sprint:" "$status_file" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
+sprint=$(status_field "$status_file" "sprint")
 if [ -n "$sprint" ] && [ "$sprint" -ge "$SPRINT_HARD_CAP" ] 2>/dev/null; then
   exit 0
 fi
 
 # Build is active — block the stop and inject continuation prompt
-phase=$(grep "^phase:" "$status_file" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
-next_action=$(grep "^next:" "$status_file" 2>/dev/null | head -1 | sed 's/^next: *//; s/"//g')
-detail=$(grep "^detail:" "$status_file" 2>/dev/null | head -1 | sed 's/^detail: *//; s/"//g')
+phase=$(status_field "$status_file" "phase")
+next_action=$(status_field "$status_file" "next")
+detail=$(status_field "$status_file" "detail")
 
 # Read spec progress
 spec_progress=""
-spec_file="${plan_dir}/spec.yaml"
-if [ -f "$spec_file" ]; then
-  total=$(grep -c "passes:" "$spec_file" 2>/dev/null || echo "0")
-  passed=$(grep -c "passes: true" "$spec_file" 2>/dev/null || echo "0")
+if [ -f "${plan_dir}/spec.yaml" ]; then
+  read total passed superseded <<< "$(spec_counts "${plan_dir}/spec.yaml")"
   spec_progress=" Spec: ${passed}/${total} passing."
 fi
 

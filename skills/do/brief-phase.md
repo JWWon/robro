@@ -35,11 +35,11 @@ Read the complexity tier and load model mappings for agent dispatch:
 2. Read `${CLAUDE_PLUGIN_ROOT}/config.json` to load the tier definitions.
 3. Select the tier matching the complexity value.
 3b. **Check for project config overrides**: Read `.robro/config.json` if it exists at the project root.
-   - If `model_tiers.{complexity}` has agent-specific overrides, apply them on top of YAML defaults
-   - If `agent_overrides` has entries, apply them with highest precedence (overrides both tier config and YAML)
-   - Precedence order: agent_overrides > config.json tier > model-config.yaml tier
-   - Example: If model-config.yaml says `builder: sonnet` for standard tier, but config.json has `agent_overrides.builder: "opus"`, use opus.
-   - If config.json is absent or has invalid JSON, silently use YAML defaults (no error).
+   - If `model_tiers.{complexity}` has agent-specific overrides, apply them on top of plugin defaults
+   - If `agent_overrides` has entries, apply them with highest precedence (overrides both tier and plugin defaults)
+   - Precedence order: agent_overrides > project config.json tier > plugin config.json tier
+   - Example: If plugin config.json says `builder: sonnet` for standard tier, but project config.json has `agent_overrides.builder: "opus"`, use opus.
+   - If project config.json is absent or has invalid JSON, silently use plugin defaults (no error).
 4. Store the model mapping for use in all subsequent agent dispatches this sprint:
    ```
    MODEL_CONFIG:

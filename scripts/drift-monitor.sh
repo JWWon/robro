@@ -18,14 +18,21 @@ case "$FILE_PATH" in
     ;;
 esac
 
+# Compute relative path for precise plan matching
+project_root=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -n "$project_root" ]; then
+  relative_path="${FILE_PATH#$project_root/}"
+else
+  relative_path=$(basename "$FILE_PATH")
+fi
+
 # Try to match the edited file to a specific spec by checking plan.md File Maps
-# Fall back to most recently modified spec if no match found
 matched_spec=""
 if [ -d "$SESSIONS_DIR" ]; then
   for plan in "$SESSIONS_DIR"/*/plan.md; do
     [ -f "$plan" ] || continue
-    # Check if file path appears in this plan's File Map
-    if grep -q "$(basename "$FILE_PATH")" "$plan" 2>/dev/null; then
+    # Match relative path (not just basename) for precision
+    if grep -qF "$relative_path" "$plan" 2>/dev/null; then
       dir=$(dirname "$plan")
       [ -f "${dir}/spec.yaml" ] && matched_spec="${dir}/spec.yaml" && break
     fi
@@ -33,20 +40,8 @@ if [ -d "$SESSIONS_DIR" ]; then
 fi
 
 # Fall back to most recently modified spec
-if [ -z "$matched_spec" ] && [ -d "$SESSIONS_DIR" ]; then
-  latest_mtime=0
-  for spec in "$SESSIONS_DIR"/*/spec.yaml; do
-    [ -f "$spec" ] || continue
-    if stat -f %m "$spec" >/dev/null 2>&1; then
-      mtime=$(stat -f %m "$spec")
-    else
-      mtime=$(stat -c %Y "$spec")
-    fi
-    if [ "$mtime" -gt "$latest_mtime" ]; then
-      latest_mtime=$mtime
-      matched_spec=$spec
-    fi
-  done
+if [ -z "$matched_spec" ]; then
+  matched_spec=$(find_latest_session "spec.yaml")
 fi
 
 if [ -n "$matched_spec" ]; then
@@ -54,8 +49,8 @@ if [ -n "$matched_spec" ]; then
   plan_name=$(basename "$plan_dir")
 
   # Count incomplete checklist items
-  incomplete=$(grep -c "passes: false" "$matched_spec" 2>/dev/null || echo "0")
-  total=$(grep -c "passes:" "$matched_spec" 2>/dev/null || echo "0")
+  read total passed superseded <<< "$(spec_counts "$matched_spec")"
+  incomplete=$((total - passed))
 
   if [ "$incomplete" -gt 0 ]; then
     echo "Active spec: ${plan_name}/spec.yaml (${incomplete}/${total} items remaining). Validate changes against checklist items and flip passes to true when verified."
@@ -64,10 +59,10 @@ if [ -n "$matched_spec" ]; then
   # During active build, show current task context
   status_candidate="${plan_dir}/status.yaml"
   if [ -f "$status_candidate" ]; then
-    build_skill=$(grep "^skill:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
+    build_skill=$(status_field "$status_candidate" "skill")
     if [ "$build_skill" = "do" ]; then
-      sprint=$(grep "^sprint:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
-      phase=$(grep "^phase:" "$status_candidate" 2>/dev/null | head -1 | sed 's/^phase: *//; s/"//g')
+      sprint=$(status_field "$status_candidate" "sprint")
+      phase=$(status_field "$status_candidate" "phase")
       echo "Build sprint ${sprint}, ${phase} phase."
     fi
   fi

@@ -65,9 +65,9 @@ Update at every step transition and within review loops (include iteration count
 
 ## Model Configuration
 
-The plan skill always uses the `standard` complexity tier for all agent dispatches. This balances thoroughness with cost. The model mappings for standard tier are defined in `model-config.yaml` at the plugin root.
+The plan skill always uses the `standard` complexity tier for all agent dispatches. This balances thoroughness with cost. The model mappings for standard tier are defined in `config.json` at the plugin root.
 
-If `.robro/config.json` exists in the project, check for `agent_overrides` that override the standard tier defaults. Precedence: agent_overrides > standard tier config > model-config.yaml defaults.
+If `.robro/config.json` exists in the project, check for `agent_overrides` that override the standard tier defaults. Precedence: agent_overrides > standard tier config > plugin config.json defaults.
 
 ## Workflow (Standard Mode)
 

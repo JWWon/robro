@@ -5,8 +5,8 @@
 INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // .content // ""' 2>/dev/null)
 
-# Normalize: lowercase, trim
-PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' | xargs)
+# Normalize: lowercase, trim (use sed instead of xargs for quoting safety)
+PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
 # Load shared config
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -18,13 +18,9 @@ source "${SCRIPT_DIR}/lib/load-config.sh"
 # Skip if already invoking a robro skill
 echo "$PROMPT_LOWER" | grep -q "^/robro:" && exit 0
 
-# Check for active spec in sessions dir
+# Check for active artifacts
 has_spec=false
-if [ -d "$SESSIONS_DIR" ]; then
-  for dir in "$SESSIONS_DIR"/*/; do
-    [ -f "${dir}spec.yaml" ] && has_spec=true && break
-  done
-fi
+has_artifact "spec.yaml" && has_spec=true
 
 # Tier 1: Direct skill triggers
 case "$PROMPT_LOWER" in
@@ -46,113 +42,42 @@ case "$PROMPT_LOWER" in
     ;;
 esac
 
-# Tier 2: Natural language triggers for /robro:idea
-# Match phrases that suggest the user has a vague idea needing clarification
-idea_patterns=(
-  "i have an idea"
-  "i want to build"
-  "i want to create"
-  "i want to add"
-  "let's build"
-  "let's create"
-  "what if we"
-  "how about we"
-  "feature request"
-  "new feature"
-  "i'm thinking"
-  "we should add"
-  "we need to build"
-  "can we build"
-  "can we add"
-  "i need a"
-  "we need a"
-)
+# Tier 2: Natural language triggers for /robro:idea (single regex instead of 18 subprocesses)
+if echo "$PROMPT_LOWER" | grep -qE "i have an idea|i want to build|i want to create|i want to add|let's build|let's create|what if we|how about we|feature request|new feature|i'm thinking|we should add|we need to build|can we build|can we add|i need a|we need a"; then
+  if ! $has_spec; then
+    echo "It sounds like you have an idea to explore. Consider using /robro:idea to shape it into clear requirements before implementation."
+  fi
+  exit 0
+fi
 
-for pattern in "${idea_patterns[@]}"; do
-  if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
-    # Only suggest idea if no spec exists yet
-    if [ "$has_spec" = false ]; then
-      echo "It sounds like you have an idea to explore. Consider using /robro:idea to shape it into clear requirements before implementation."
+# Tier 2.5: Natural language triggers for /robro:plan (single regex instead of 12 subprocesses)
+if echo "$PROMPT_LOWER" | grep -qE "plan this|break this down|break it down|create a spec|create a plan|implementation plan|tech spec|technical spec|task breakdown|spec this|let's plan|plan it out"; then
+  if ! $has_spec; then
+    has_idea=false
+    has_artifact "idea.md" && has_idea=true
+    if $has_idea; then
+      echo "An idea.md exists. Consider using /robro:plan to generate the technical spec and implementation plan."
+    else
+      echo "No idea.md found. Consider running /robro:idea first to define requirements, then /robro:plan for the technical plan."
     fi
-    exit 0
   fi
-done
+  exit 0
+fi
 
-# Tier 2.5: Natural language triggers for /robro:plan
-spec_patterns=(
-  "plan this"
-  "break this down"
-  "break it down"
-  "create a spec"
-  "create a plan"
-  "implementation plan"
-  "tech spec"
-  "technical spec"
-  "task breakdown"
-  "spec this"
-  "let's plan"
-  "plan it out"
-)
+# Tier 2.7: Natural language triggers for /robro:tune (single regex instead of 8 subprocesses)
+if echo "$PROMPT_LOWER" | grep -qE "audit config|review config|optimize setup|tune setup|check my setup|improve config|configuration audit|check configuration"; then
+  echo "Consider using /robro:tune to audit your project's Claude Code configuration for gaps and improvements."
+  exit 0
+fi
 
-for pattern in "${spec_patterns[@]}"; do
-  if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
-    if [ "$has_spec" = false ]; then
-      # Check if idea.md exists
-      has_idea=false
-      if [ -d "$SESSIONS_DIR" ]; then
-        for dir in "$SESSIONS_DIR"/*/; do
-          [ -f "${dir}idea.md" ] && has_idea=true && break
-        done
-      fi
-      if [ "$has_idea" = true ]; then
-        echo "An idea.md exists. Consider using /robro:plan to generate the technical spec and implementation plan."
-      else
-        echo "No idea.md found. Consider running /robro:idea first to define requirements, then /robro:plan for the technical plan."
-      fi
-    fi
-    exit 0
+# Tier 3: Implementation triggers — warn if no spec exists (single regex instead of 7 subprocesses)
+if echo "$PROMPT_LOWER" | grep -qE "implement this|start coding|let's implement|write the code|start building|begin implementation|code this up"; then
+  if $has_spec; then
+    echo "A spec exists. Consider using /robro:do for structured autonomous execution."
+  else
+    echo "No spec found. Consider running /robro:idea then /robro:plan before implementing to ensure clear requirements and a validated plan."
   fi
-done
-
-# Tier 2.7: Natural language triggers for /robro:tune
-tune_patterns=(
-  "audit config"
-  "review config"
-  "optimize setup"
-  "tune setup"
-  "check my setup"
-  "improve config"
-  "configuration audit"
-  "check configuration"
-)
-
-for pattern in "${tune_patterns[@]}"; do
-  if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
-    echo "Consider using /robro:tune to audit your project's Claude Code configuration for gaps and improvements."
-    exit 0
-  fi
-done
-
-# Tier 3: Implementation triggers — warn if no spec exists
-impl_patterns=(
-  "implement this"
-  "start coding"
-  "let's implement"
-  "write the code"
-  "start building"
-  "begin implementation"
-  "code this up"
-)
-
-for pattern in "${impl_patterns[@]}"; do
-  if echo "$PROMPT_LOWER" | grep -q "$pattern"; then
-    if [ "$has_spec" = true ]; then
-      echo "A spec exists. Consider using /robro:do for structured autonomous execution."
-    elif [ "$has_spec" = false ]; then
-      echo "No spec found. Consider running /robro:idea then /robro:plan before implementing to ensure clear requirements and a validated plan."
-    fi
-    exit 0
-  fi
-done
+  exit 0
+fi
 
 exit 0

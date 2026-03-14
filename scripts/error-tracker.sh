@@ -15,16 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib/load-config.sh"
 
 # Find active build status.yaml
-status_file=""
-if [ -d "$SESSIONS_DIR" ]; then
-  for dir in "$SESSIONS_DIR"/*/; do
-    [ -d "$dir" ] || continue
-    candidate="${dir}status.yaml"
-    [ -f "$candidate" ] || continue
-    skill=$(grep "^skill:" "$candidate" 2>/dev/null | head -1 | sed 's/^skill: *//; s/"//g')
-    [ "$skill" = "do" ] && status_file=$candidate && break
-  done
-fi
+status_file=$(find_latest_session "status.yaml" "skill" "do")
 
 # No active build — exit silently
 [ -z "$status_file" ] && exit 0
