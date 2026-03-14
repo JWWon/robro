@@ -48,7 +48,7 @@
     "codex": {
       "enabled": false,
       "binary": "codex",
-      "model": "o4-mini",
+      "model": "gpt-5.4",
       "approval_mode": "full-auto",
       "sandbox": true,
       "strengths": ["code-review", "security-audit", "verification", "reasoning"],

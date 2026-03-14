@@ -461,20 +461,60 @@ Select providers to enable:
 
 Options should include each **detected but not yet configured** provider. Include a "Skip all" option.
 
-#### 3.8e. Write Provider Config
+#### 3.8e. Discover Models & Write Provider Config
+
+Before writing provider presets, dynamically discover the current best model for each selected provider from local CLI cache files. This ensures the config always uses up-to-date model names.
+
+**Step 1: Discover Codex model** (if Codex was selected)
+
+Read the Codex CLI model cache file, which is auto-maintained by the CLI on startup:
+
+```bash
+CODEX_MODEL=$(jq -r '[.models[] | select(.visibility == "list")] | sort_by(.priority) | .[0].slug' "${HOME}/.codex/models_cache.json" 2>/dev/null)
+```
+
+If the cache file doesn't exist or the jq command fails (empty result), fall back to the plugin default:
+```bash
+if [ -z "$CODEX_MODEL" ]; then
+  CODEX_MODEL="gpt-5.4"
+  echo "Warning: Could not read ~/.codex/models_cache.json — using fallback model gpt-5.4"
+fi
+```
+
+Report: **"Codex model: {CODEX_MODEL} (from ~/.codex/models_cache.json)"** or **"Codex model: gpt-5.4 (fallback — cache not found)"**
+
+**Step 2: Discover Gemini model** (if Gemini was selected)
+
+Read the default model from the Gemini CLI's installed npm package source:
+
+```bash
+GEMINI_MODEL=$(node -e "import('@google/gemini-cli-core/dist/src/config/models.js').then(m => console.log(m.DEFAULT_GEMINI_MODEL))" 2>/dev/null)
+```
+
+If the node command fails (package not found or import error), fall back:
+```bash
+if [ -z "$GEMINI_MODEL" ]; then
+  GEMINI_MODEL="gemini-2.5-pro"
+  echo "Warning: Could not read @google/gemini-cli-core models — using fallback model gemini-2.5-pro"
+fi
+```
+
+Report: **"Gemini model: {GEMINI_MODEL} (from @google/gemini-cli-core)"** or **"Gemini model: gemini-2.5-pro (fallback — package not found)"**
+
+**Step 3: Write provider config**
 
 For each selected provider, merge the configuration into `.robro/config.json`:
 
 1. Read the existing `.robro/config.json` content
 2. If no `providers` key exists, add it as an empty object
-3. For each selected provider, add the preset configuration:
+3. For each selected provider, add the preset configuration using the **discovered model**:
 
-**Codex preset:**
+**Codex preset** (uses `CODEX_MODEL` from Step 1):
 ```json
 {
   "enabled": true,
   "binary": "codex",
-  "model": "o4-mini",
+  "model": "{CODEX_MODEL}",
   "approval_mode": "full-auto",
   "sandbox": true,
   "strengths": ["code-review", "security-audit", "verification", "reasoning"],
@@ -482,12 +522,12 @@ For each selected provider, merge the configuration into `.robro/config.json`:
 }
 ```
 
-**Gemini preset:**
+**Gemini preset** (uses `GEMINI_MODEL` from Step 2):
 ```json
 {
   "enabled": true,
   "binary": "gemini",
-  "model": "gemini-2.5-pro",
+  "model": "{GEMINI_MODEL}",
   "approval_mode": "yolo",
   "thinking_level": "auto",
   "strengths": ["multimodal", "large-context", "ui-analysis", "second-opinion"],
@@ -497,7 +537,7 @@ For each selected provider, merge the configuration into `.robro/config.json`:
 
 4. Write the updated config back using the Edit tool (preserve all existing content)
 
-Report: **"Providers configured: {N} enabled"** with the list of enabled providers.
+Report: **"Providers configured: {N} enabled"** with the list of enabled providers and their discovered models.
 
 #### 3.8f. Idempotency
 
