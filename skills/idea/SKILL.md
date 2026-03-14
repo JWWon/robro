@@ -36,6 +36,10 @@ Do NOT write any code, create any implementation files, or take any implementati
 This applies to EVERY project regardless of perceived simplicity. "Simple" projects are where unexamined assumptions cause the most wasted work.
 </HARD_GATE>
 
+## Provider Forwarding
+
+When dispatching agents (Researcher, or challenge agents escalated to subagents), check the conversation context for hook-injected provider availability. If `External advisors available:` appears in the current context, include it in the agent dispatch prompt under an `AVAILABLE_PROVIDERS:` key. This enables agents to consult external CLIs for complex second-opinions or multimodal analysis (e.g., Gemini for analyzing UI mockups referenced in the idea). If no provider context is present, omit the key — agents will skip their advisory section.
+
 ## Pipeline Status Tracking
 
 At every step transition, update `status.yaml` (at plan root, e.g. `.robro/sessions/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.

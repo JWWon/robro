@@ -34,6 +34,110 @@
         "simplifier": { "$ref": "#/$defs/model" },
         "ontologist": { "$ref": "#/$defs/model" }
       }
+    },
+    "generic_provider": {
+      "type": "object",
+      "description": "Generic external CLI provider configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this provider is active. Hook skips disabled providers.",
+          "default": false
+        },
+        "binary": {
+          "type": "string",
+          "description": "CLI binary name to look up via command -v (e.g. 'codex', 'gemini')"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model identifier passed to the CLI (e.g. 'o4-mini', 'gemini-2.5-pro')"
+        },
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Advisory focus areas for routing (e.g. ['code-review', 'multimodal'])"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Maximum milliseconds to wait for this provider's response",
+          "minimum": 5000,
+          "maximum": 600000,
+          "default": 300000
+        }
+      },
+      "required": ["enabled"]
+    },
+    "codex_provider": {
+      "type": "object",
+      "description": "Codex CLI provider with approval and sandbox options",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "binary": { "type": "string" },
+        "model": { "type": "string" },
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 600000,
+          "default": 300000
+        },
+        "approval_mode": {
+          "type": "string",
+          "enum": ["suggest", "auto-edit", "full-auto"],
+          "description": "Codex approval mode (--full-auto for headless)",
+          "default": "full-auto"
+        },
+        "sandbox": {
+          "type": "boolean",
+          "description": "Whether to run Codex in --sandbox mode for read-only analysis",
+          "default": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "gemini_provider": {
+      "type": "object",
+      "description": "Gemini CLI provider with approval and thinking options",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "binary": { "type": "string" },
+        "model": { "type": "string" },
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 600000,
+          "default": 300000
+        },
+        "approval_mode": {
+          "type": "string",
+          "enum": ["default", "yolo"],
+          "description": "Gemini --approval-mode flag (yolo for headless)",
+          "default": "yolo"
+        },
+        "thinking_level": {
+          "type": "string",
+          "enum": ["none", "auto", "high"],
+          "description": "Gemini thinking level",
+          "default": "auto"
+        }
+      },
+      "required": ["enabled"]
     }
   },
   "properties": {
@@ -95,6 +199,15 @@
         "simplifier": { "$ref": "#/$defs/model" },
         "ontologist": { "$ref": "#/$defs/model" }
       }
+    },
+    "providers": {
+      "type": "object",
+      "description": "External CLI provider configurations. Named providers (codex, gemini) get typed validation; additional providers use the generic schema.",
+      "properties": {
+        "codex": { "$ref": "#/$defs/codex_provider" },
+        "gemini": { "$ref": "#/$defs/gemini_provider" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/generic_provider" }
     }
   }
 }

@@ -33,6 +33,10 @@ Do NOT write any implementation code during this skill. Your ONLY outputs are:
 4. `spec.yaml` — technical checklist and validation source of truth
 </HARD_GATE>
 
+## Provider Forwarding
+
+When dispatching agents (Researcher, Architect, Critic, Planner), check the conversation context for hook-injected provider availability. If `External advisors available:` appears in the current context, include it in the agent dispatch prompt under an `AVAILABLE_PROVIDERS:` key. This enables agents to consult external CLIs for complex technical second-opinions or research cross-validation. If no provider context is present, omit the key — agents will skip their advisory section.
+
 ## Mode Selection
 
 Detect the appropriate mode based on input:

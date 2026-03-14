@@ -13,6 +13,7 @@
 #   find_latest_session   — find most recent session file, optionally filtered
 #   spec_counts           — count spec.yaml items (total passed superseded)
 #   has_artifact          — check if any session has a specific file
+#   robro_providers       — enumerate enabled+installed external CLI providers
 
 SESSIONS_DIR=".robro/sessions"
 CONFIG_FILE=".robro/config.json"
@@ -98,4 +99,31 @@ has_artifact() {
     [ -f "${dir}${1}" ] && return 0
   done
   return 1
+}
+
+# Enumerate enabled external CLI providers whose binaries are on PATH.
+# Reads from .robro/config.json first, falls back to plugin config.json.
+# Outputs one line per available provider: "name:model:timeout_ms"
+# Usage: while IFS=: read -r name model timeout_ms; do ...; done < <(robro_providers)
+robro_providers() {
+  local config_sources=("$CONFIG_FILE")
+  [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/config.json" ] && \
+    config_sources+=("${CLAUDE_PLUGIN_ROOT}/config.json")
+
+  local providers_json=""
+  for src in "${config_sources[@]}"; do
+    [ -f "$src" ] || continue
+    providers_json=$(jq -r '.providers // empty' "$src" 2>/dev/null)
+    [ -n "$providers_json" ] && break
+  done
+
+  [ -z "$providers_json" ] && return 0
+
+  echo "$providers_json" | jq -r '
+    to_entries[]
+    | select(.value.enabled == true)
+    | "\(.key):\(.value.binary // .key):\(.value.model // ""):\(.value.timeout_ms // 300000)"
+  ' 2>/dev/null | while IFS=: read -r name binary model timeout_ms; do
+    command -v "$binary" > /dev/null 2>&1 && echo "${name}:${model}:${timeout_ms}"
+  done
 }

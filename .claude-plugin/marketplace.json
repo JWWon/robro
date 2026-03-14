@@ -9,7 +9,7 @@
     {
       "name": "robro",
       "description": "Claude Code plugin that transforms a simple agent into a structured planning and execution partner",
-      "version": "0.1.3",
+      "version": "0.2.0",
       "author": {
         "name": "JWWon"
       },

@@ -30,6 +30,21 @@ The do skill orchestrates — it never writes implementation code directly.
 The do skill DOES write: status.yaml, build-progress.md, spec-mutations.log, spec.yaml mutations, and discussion/ files.
 </HARD_GATE>
 
+## Provider Forwarding
+
+When dispatching agents (builder, reviewer, researcher, or any agent), check the conversation context for hook-injected provider availability. If `External advisors available:` appears in the current context (injected by `provider-inject.sh`), include it in the agent dispatch prompt under an `AVAILABLE_PROVIDERS:` key:
+
+```
+AVAILABLE_PROVIDERS:
+External advisors available: codex(o4-mini), gemini(gemini-2.5-pro)
+<advisory_templates>
+  codex: timeout 300 codex exec --full-auto --sandbox --ephemeral --quiet -m o4-mini "{prompt}" 2>/dev/null
+  gemini: timeout 300 gemini -p "{prompt}" --approval-mode=yolo --output-format json -m gemini-2.5-pro 2>/dev/null | jq -r '.response // .'
+</advisory_templates>
+```
+
+If no provider context is present, omit the `AVAILABLE_PROVIDERS` key entirely — agents will skip their External CLI Advisory section.
+
 ## Prerequisites
 
 1. `plan.md` must exist with phased tasks and a File Map

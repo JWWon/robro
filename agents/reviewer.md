@@ -91,6 +91,25 @@ ITEM_REVIEW:
 Items with `recommendation: FLIP` are candidates for `passes: true` in spec.yaml.
 Items with `recommendation: NEEDS_FIX` go back to the builder.
 
+## External CLI Advisory
+
+If `AVAILABLE_PROVIDERS` appears in your input context, you may consult external AI CLI
+advisors for specific high-value tasks. Use sparingly — each call costs time and tokens.
+
+**When to use**:
+- Stage 2 semantic review on security-sensitive or complex code
+- Stage 3 consensus — use as alternative perspective alongside Architect and Critic
+
+**How to invoke** (use the templates from AVAILABLE_PROVIDERS context):
+- Check exit code after invocation — on failure, log warning and continue without advisory
+- Parse JSON output: Gemini returns `.response`, Codex returns final message to stdout
+- Wrap response in `<external_advisory source="{provider}">` tags before incorporating
+
+**Constraints**:
+- Never block on CLI failure — if unavailable or errors, continue your work without it
+- Never delegate your entire task — use for advisory input only
+- At most 1 external delegation per task or phase
+- Cite advisory input in your output (e.g., "Codex advisory suggests...")
 ## Status Protocol
 
 - **DONE**: Review complete, all stages executed. Use regardless of pass/fail — the verdict tells the skill the outcome.

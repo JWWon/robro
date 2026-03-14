@@ -341,6 +341,122 @@ If the user chooses "Create with defaults":
 
 Report: **".robro/config.json: created with schema reference"**
 
+### Step 3.8: CLI Provider Detection
+
+Detect and configure external AI CLI tools (Codex, Gemini) for advisory delegation.
+
+#### 3.8a. Detect Installed CLIs
+
+Check for each CLI binary:
+
+```bash
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+CODEX_FOUND=false
+GEMINI_FOUND=false
+
+if command -v codex &>/dev/null; then
+  CODEX_FOUND=true
+  CODEX_VERSION=$(codex --version 2>&1 | head -1)
+fi
+
+if command -v gemini &>/dev/null; then
+  GEMINI_FOUND=true
+  GEMINI_VERSION=$(gemini --version 2>&1 | head -1)
+fi
+```
+
+If NEITHER CLI is found, report: **"No external CLI tools detected (codex, gemini) — skipping provider setup"** and skip to Step 4.
+
+#### 3.8b. Check Gemini Auth Method
+
+If Gemini CLI is found, check the authentication method:
+
+```bash
+GEMINI_SETTINGS="${HOME}/.gemini/settings.json"
+if [ -f "$GEMINI_SETTINGS" ]; then
+  AUTH_TYPE=$(jq -r '.security.auth.selectedType // "unknown"' "$GEMINI_SETTINGS" 2>/dev/null)
+fi
+```
+
+If `AUTH_TYPE` contains "oauth" and the `GEMINI_API_KEY` environment variable is NOT set, display a warning:
+
+> **Warning**: Gemini CLI is using OAuth authentication. For headless delegation (when robro agents call Gemini automatically), `GEMINI_API_KEY` environment variable is recommended. OAuth may fail in non-interactive mode. Set `GEMINI_API_KEY` in your shell profile or `.env` file.
+
+This is advisory only — do not block provider setup.
+
+#### 3.8c. Check Existing Provider Config
+
+Read `.robro/config.json` and check if `providers` section already exists:
+
+1. Use the Read tool to read `${PROJECT_ROOT}/.robro/config.json`
+2. If the file exists and has a `providers` key, check if the detected CLIs are already configured
+3. A provider is "already configured" if it has an entry in `providers` with any value for `enabled`
+4. Build a list of providers that need configuration (detected but not yet configured)
+
+If all detected providers are already configured, report: **"All detected CLI providers already configured — no changes"** and skip to Step 4.
+
+#### 3.8d. Present Provider Checklist
+
+Build a status summary and present via AskUserQuestion with multiSelect:
+
+```
+External CLI providers detected:
+
+[detected]           codex ({version}) — Code review, security audit, verification
+[detected]           gemini ({version}) — Multimodal analysis, large context, UI review
+[not found]          codex — Not installed
+[already configured] gemini — Already in .robro/config.json
+
+Select providers to enable:
+```
+
+Options should include each **detected but not yet configured** provider. Include a "Skip all" option.
+
+#### 3.8e. Write Provider Config
+
+For each selected provider, merge the configuration into `.robro/config.json`:
+
+1. Read the existing `.robro/config.json` content
+2. If no `providers` key exists, add it as an empty object
+3. For each selected provider, add the preset configuration:
+
+**Codex preset:**
+```json
+{
+  "enabled": true,
+  "binary": "codex",
+  "model": "o4-mini",
+  "approval_mode": "full-auto",
+  "sandbox": true,
+  "strengths": ["code-review", "security-audit", "verification", "reasoning"],
+  "timeout_ms": 300000
+}
+```
+
+**Gemini preset:**
+```json
+{
+  "enabled": true,
+  "binary": "gemini",
+  "model": "gemini-2.5-pro",
+  "approval_mode": "yolo",
+  "thinking_level": "auto",
+  "strengths": ["multimodal", "large-context", "ui-analysis", "second-opinion"],
+  "timeout_ms": 300000
+}
+```
+
+4. Write the updated config back using the Edit tool (preserve all existing content)
+
+Report: **"Providers configured: {N} enabled"** with the list of enabled providers.
+
+#### 3.8f. Idempotency
+
+This step produces identical results on re-run:
+- Already-configured providers are detected and skipped
+- Running setup twice does not create duplicate entries
+- Provider config is merged into existing `.robro/config.json`, preserving other fields
+
 ### Step 4: Completion Summary
 Report all actions taken:
 - CLAUDE.md: created/updated/unchanged
@@ -348,3 +464,4 @@ Report all actions taken:
 - .gitignore: created/updated/unchanged
 - Settings.json: created/updated/unchanged
 - Config.json: created/skipped/unchanged
+- Providers: configured count / already configured count / skipped count

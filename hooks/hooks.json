@@ -25,6 +25,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pipeline-guard.sh",
             "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/provider-inject.sh",
+            "timeout": 5000
           }
         ]
       }
