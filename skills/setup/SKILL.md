@@ -26,122 +26,18 @@ You are configuring a project to work with the robro plugin. This skill manages 
 
 ### Step 1: CLAUDE.md Section Management
 
-Manage the robro-owned section inside `.claude/CLAUDE.md`. This section lives between HTML comment delimiters and is the only part of the file that robro reads or writes. All other content in the file is preserved untouched.
-
-**Markers**: `<!-- robro:managed:start [VERSION] -->` and `<!-- robro:managed:end -->`
-
-The start marker includes the plugin version in brackets (e.g., `[0.1.0]`). This allows the setup skill to detect whether the managed section needs updating by comparing versions instead of diffing content.
-
-#### 1a. Load the template and version
-
-Read the template content from the plugin's bundled file:
-
-```
-${CLAUDE_PLUGIN_ROOT}/skills/setup/claude-md-template.md
-```
-
-Use the Read tool to load this file. Store its content as `TEMPLATE_CONTENT`.
-
-Also read the plugin version from:
-
-```
-${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json
-```
-
-Extract the `"version"` field (e.g., `"0.1.0"`). Store it as `PLUGIN_VERSION`.
-
-#### 1b. Locate the project root and target file
+Invoke the managed block script to create or update the robro section in `.claude/CLAUDE.md`:
 
 ```bash
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/manage-claudemd.sh" "$PROJECT_ROOT"
 ```
 
-The target file is `${PROJECT_ROOT}/.claude/CLAUDE.md`.
+The script handles all cases: file missing, no markers, version comparison, backward compatibility with the legacy `[VERSION]` bracket marker format, and code-block-aware marker detection. It outputs what action was taken.
 
-Check if the file exists using the Read tool. If the Read tool returns a "file does not exist" error, the file does not exist yet.
-
-#### 1c. If `.claude/CLAUDE.md` does not exist
-
-Create the `.claude/` directory if it does not already exist (use `mkdir -p`). Then create `.claude/CLAUDE.md` with the following content:
-
-```
-<!-- robro:managed:start [PLUGIN_VERSION] -->
-{TEMPLATE_CONTENT}
-<!-- robro:managed:end -->
-```
-
-Report: **"Created new .claude/CLAUDE.md with robro section"**
-
-Skip to Step 2.
-
-#### 1d. If `.claude/CLAUDE.md` exists — find markers
-
-Read the entire file content. Before searching for markers, identify any triple-backtick fenced code blocks (` ``` `) in the file. Markers that appear inside fenced code blocks must be ignored — they are documentation examples, not actual section delimiters.
-
-Search the file content (outside of fenced code blocks) for `<!-- robro:managed:start`. The marker may include a version bracket (e.g., `<!-- robro:managed:start [0.1.0] -->`). Match the marker with or without a version bracket.
-
-#### 1e. If no start marker found
-
-The file exists but has no robro section yet. Append the robro section at the end of the file, preceded by a blank line:
-
-```
-
-<!-- robro:managed:start [PLUGIN_VERSION] -->
-{TEMPLATE_CONTENT}
-<!-- robro:managed:end -->
-```
-
-Preserve all existing file content exactly as-is above the appended section.
-
-Report: **"Added robro section to existing .claude/CLAUDE.md"**
-
-Skip to Step 2.
-
-#### 1f. If start marker found — check for end marker
-
-Search (outside of fenced code blocks) for `<!-- robro:managed:end -->` after the start marker.
-
-**If end marker is missing** (start marker exists without a matching end marker): Treat everything from the start marker line to the end of the file as the robro section. Replace from the start marker line to the end of the file with:
-
-```
-<!-- robro:managed:start [PLUGIN_VERSION] -->
-{TEMPLATE_CONTENT}
-<!-- robro:managed:end -->
-```
-
-Report: **"Repaired robro section (missing end marker) in .claude/CLAUDE.md"**
-
-Skip to Step 2.
-
-#### 1g. If both markers found — check for duplicates
-
-If multiple start/end marker pairs exist (outside of fenced code blocks), use the FIRST pair only. Warn the user:
-
-> **Warning**: Found duplicate robro:managed marker pairs in .claude/CLAUDE.md. Using the first pair. Please manually remove the extra markers.
-
-#### 1h. Compare version and update
-
-Extract the version from the existing start marker by matching the pattern `[X.Y.Z]` (e.g., `<!-- robro:managed:start [0.1.0] -->` → version is `0.1.0`). If no version bracket is found in the marker, treat the installed version as `0.0.0` (always triggers an update).
-
-Compare the extracted version with `PLUGIN_VERSION` from step 1a.
-
-**If the versions match**: No update needed.
-
-Report: **"Robro section already current (vPLUGIN_VERSION) — no changes"**
-
-Skip to Step 2.
-
-**If the versions differ** (or no version found): Replace the entire block from the start marker line through the end marker line (inclusive) with the updated block. Keep all content before the start marker and after the end marker untouched.
-
-The updated block should be:
-
-```
-<!-- robro:managed:start [PLUGIN_VERSION] -->
-{TEMPLATE_CONTENT}
-<!-- robro:managed:end -->
-```
-
-Report: **"Updated robro section (vOLD_VERSION → vPLUGIN_VERSION) in .claude/CLAUDE.md"**
+New marker format:
+- Start: `<!-- robro@{version}:managed:start -->`
+- End: `<!-- robro:managed:end -->`
 
 ### Step 2: MCP/Skill Detection & Checklist
 
@@ -165,7 +61,7 @@ For each item, determine whether it is already configured. An item is "configure
 **MCP detection (context7, grep)**:
 
 1. Read `~/.claude.json` using the Read tool. Parse the JSON content and check if the `mcpServers` object contains a key matching the MCP name (e.g., `"context7"` or `"grep"`).
-2. Read `.mcp.json` at the project root (use the `PROJECT_ROOT` from Step 1b). Parse the JSON content and check if the `mcpServers` object contains a key matching the MCP name.
+2. Read `.mcp.json` at the project root (use the `PROJECT_ROOT` from Step 1). Parse the JSON content and check if the `mcpServers` object contains a key matching the MCP name.
 3. If the key exists in EITHER file, the MCP is **already configured** — skip it.
 4. If the Read tool returns a "file does not exist" error for either file, treat that file as having no MCPs configured (do not error out — just continue to the next file).
 
@@ -285,25 +181,25 @@ Configure `.gitignore` at the project root so that temporal plan artifacts are n
 The following 5 rules must be present in the project's `.gitignore`:
 
 ```
-# Robro plan artifacts (temporal)
-docs/plans/*/research/
-docs/plans/*/discussion/
-docs/plans/*/status.yaml
-docs/plans/*.bak.md
-docs/plans/*.bak.yaml
+# Robro temporal artifacts
+.robro/sessions/*/research/
+.robro/sessions/*/discussion/
+.robro/sessions/*/status.yaml
+.robro/sessions/*/*.bak.*
+.claude/worktrees/
 ```
 
 Store these 5 rule lines (not including the comment header) as `ROBRO_RULES` for comparison below:
 
-1. `docs/plans/*/research/`
-2. `docs/plans/*/discussion/`
-3. `docs/plans/*/status.yaml`
-4. `docs/plans/*.bak.md`
-5. `docs/plans/*.bak.yaml`
+1. `.robro/sessions/*/research/`
+2. `.robro/sessions/*/discussion/`
+3. `.robro/sessions/*/status.yaml`
+4. `.robro/sessions/*/*.bak.*`
+5. `.claude/worktrees/`
 
 #### 3b. Check Existing .gitignore
 
-1. Use the Read tool to read `${PROJECT_ROOT}/.gitignore` (using the `PROJECT_ROOT` from Step 1b)
+1. Use the Read tool to read `${PROJECT_ROOT}/.gitignore` (using the `PROJECT_ROOT` from Step 1)
 2. If the Read tool returns a "file does not exist" error, the file does not exist — proceed to 3c (create case)
 3. If the file exists, read its full content. For each of the 5 rules in `ROBRO_RULES`, check whether the EXACT rule text appears as a line in the file (exact string match, trimming trailing whitespace)
 4. Build a list of missing rules — rules that do NOT already appear in the file
@@ -313,12 +209,12 @@ Store these 5 rule lines (not including the comment header) as `ROBRO_RULES` for
 **If `.gitignore` does NOT exist**: Create it with the Write tool containing the header comment and all 5 rules:
 
 ```
-# Robro plan artifacts (temporal)
-docs/plans/*/research/
-docs/plans/*/discussion/
-docs/plans/*/status.yaml
-docs/plans/*.bak.md
-docs/plans/*.bak.yaml
+# Robro temporal artifacts
+.robro/sessions/*/research/
+.robro/sessions/*/discussion/
+.robro/sessions/*/status.yaml
+.robro/sessions/*/*.bak.*
+.claude/worktrees/
 ```
 
 Report: **".gitignore: created with 5 rules"**
@@ -327,7 +223,7 @@ Report: **".gitignore: created with 5 rules"**
 
 1. Check if the file content ends with a newline. If not, prepend a newline to the content you will append
 2. Add a blank line separator
-3. Add the `# Robro plan artifacts (temporal)` header comment ONLY if none of the 5 robro rules currently exist in the file (i.e., all 5 are missing). If some rules already exist, skip the header to avoid duplicate headers
+3. Add the `# Robro temporal artifacts` header comment ONLY if none of the 5 robro rules currently exist in the file (i.e., all 5 are missing). If some rules already exist, skip the header to avoid duplicate headers
 4. Append only the missing rules, one per line
 5. Use the Edit tool to append to the end of the file
 
@@ -414,9 +310,41 @@ This step produces identical results on re-run:
 - If the file has other env vars, they are preserved
 - If the file has other settings (permissions, hooks, etc.), they are preserved
 
+### Step 3.7: Config File Setup
+
+#### 3.7a. Check for Existing Config
+
+Check if `.robro/config.json` exists:
+```bash
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+ls "${PROJECT_ROOT}/.robro/config.json" 2>/dev/null
+```
+
+If the file exists, report: **".robro/config.json already exists — no changes"** and skip to Step 4.
+
+#### 3.7b. Offer Config Creation
+
+If the file does not exist, ask the user via AskUserQuestion:
+
+"Would you like to create .robro/config.json for project-level customization? This file lets you override model tiers, thresholds, and per-agent model assignments. All fields are optional — omitted fields use built-in defaults."
+
+Options: "Create with defaults", "Skip for now"
+
+#### 3.7c. Create Config File
+
+If the user chooses "Create with defaults":
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/JWWon/robro/main/config.schema.json"
+}
+```
+
+Report: **".robro/config.json: created with schema reference"**
+
 ### Step 4: Completion Summary
 Report all actions taken:
 - CLAUDE.md: created/updated/unchanged
 - MCPs/skills: installed count / already configured count / skipped count
 - .gitignore: created/updated/unchanged
 - Settings.json: created/updated/unchanged
+- Config.json: created/skipped/unchanged

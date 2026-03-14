@@ -10,12 +10,14 @@ TOOL=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null)
 # Skip if no error
 [ -z "$ERROR" ] && exit 0
 
-PLANS_DIR="docs/plans"
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
 
 # Find active build status.yaml
 status_file=""
-if [ -d "$PLANS_DIR" ]; then
-  for dir in "$PLANS_DIR"/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue

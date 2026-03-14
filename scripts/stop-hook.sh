@@ -7,18 +7,22 @@
 # 1. Max 50 reinforcements per session
 # 2. Rate limit detection (from error-tracker.sh output)
 # 3. stop_hook_active + high count (proxy for context pressure)
-# 4. Sprint hard cap (30)
+# 4. Sprint hard cap (configurable, default 30)
 
 INPUT=$(cat)
 STOP_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null)
 
-PLANS_DIR="docs/plans"
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
+
+SPRINT_HARD_CAP=$(robro_config '.thresholds.sprint_hard_cap' '30')
 
 # Find active build status.yaml (at plan root, not discussion/)
 status_file=""
-if [ -d "$PLANS_DIR" ]; then
+if [ -d "$SESSIONS_DIR" ]; then
   latest_mtime=0
-  for dir in "$PLANS_DIR"/*/; do
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue
@@ -65,14 +69,15 @@ if [ -f "$ERROR_FILE" ]; then
   fi
 fi
 
-# Circuit breaker 3: stop_hook_active + high count (context pressure proxy)
-if [ "$STOP_ACTIVE" = "true" ] && [ "$count" -ge 30 ]; then
+# Circuit breaker 3: stop_hook_active + rapid consecutive blocks
+# Lower threshold (5) prevents noisy loops when waiting for background agents
+if [ "$STOP_ACTIVE" = "true" ] && [ "$count" -ge 5 ]; then
   exit 0
 fi
 
 # Circuit breaker 4: Sprint hard cap
 sprint=$(grep "^sprint:" "$status_file" 2>/dev/null | head -1 | sed 's/^sprint: *//; s/"//g')
-if [ -n "$sprint" ] && [ "$sprint" -ge 30 ] 2>/dev/null; then
+if [ -n "$sprint" ] && [ "$sprint" -ge "$SPRINT_HARD_CAP" ] 2>/dev/null; then
   exit 0
 fi
 

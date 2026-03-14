@@ -148,7 +148,7 @@ The injection pattern is "you are HERE, do THIS next" -- not a rules dump.
 
 ### Plan artifacts
 
-Each plan lives in `docs/plans/YYMMDD_{name}/`:
+Each plan lives in `.robro/sessions/YYMMDD_{name}/`:
 
 | File | Purpose |
 |------|---------|
@@ -181,7 +181,7 @@ Result: exactly one clean commit per plan cycle on main. If a session starts whi
 ## Requirements
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed and configured
-- A project repository (robro stores plan artifacts in `docs/plans/`)
+- A project repository (robro stores plan artifacts in `.robro/sessions/`)
 
 ---
 

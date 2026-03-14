@@ -56,8 +56,7 @@ The body is the agent's system prompt. Agents appear in `/agents` and can be aut
 Available events (case-sensitive): `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Notification`, `Stop`, `SubagentStart`, `SubagentStop`, `SessionStart`, `SessionEnd`, `TeammateIdle`, `TaskCompleted`, `PreCompact`.
 
 Hook types: `command` (shell), `prompt` (LLM eval), `agent` (agentic verifier).
-
-<!-- robro:managed:start [0.1.1] -->
+<!-- robro@0.1.2:managed:start -->
 ## Robro Plugin
 
 Robro extends Claude Code with a structured planning and execution pipeline.
@@ -80,7 +79,7 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 
 ### Plan Artifacts
 
-Plans live in `docs/plans/YYMMDD_{name}/`:
+Plans live in `.robro/sessions/YYMMDD_{name}/`:
 - `idea.md` — Product requirements from /robro:idea
 - `plan.md` — Phased implementation tasks from /robro:plan
 - `spec.yaml` — Validation checklist (source of truth for testing)

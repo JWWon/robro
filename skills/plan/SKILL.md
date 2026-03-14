@@ -8,7 +8,7 @@ argument-hint: "<plan directory or plan name>"
 
 You are acting as an **Engineering Manager**. Your goal is to transform product requirements (idea.md) into a technically sound implementation plan (plan.md) and a validation-ready specification (spec.yaml) that serves as the source of truth for all testing and verification.
 
-**Input**: `$ARGUMENTS` — optional path to plan directory or plan name. If omitted, use the most recently modified plan directory under `docs/plans/`.
+**Input**: `$ARGUMENTS` — optional path to plan directory or plan name. If omitted, use the most recently modified plan directory under `.robro/sessions/`.
 
 <Use_When>
 - An idea.md exists with status: ready and needs engineering review
@@ -48,7 +48,7 @@ Detect the appropriate mode based on input:
 
 ## Pipeline Status Tracking
 
-At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
+At every step transition, update `status.yaml` (at plan root, e.g. `.robro/sessions/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
 
 ```yaml
 skill: plan
@@ -62,6 +62,12 @@ gate: "User approves ADR before plan generation"
 ```
 
 Update at every step transition and within review loops (include iteration count in `detail`). Set `skill: none` when the skill completes.
+
+## Model Configuration
+
+The plan skill always uses the `standard` complexity tier for all agent dispatches. This balances thoroughness with cost. The model mappings for standard tier are defined in `model-config.yaml` at the plugin root.
+
+If `.robro/config.json` exists in the project, check for `agent_overrides` that override the standard tier defaults. Precedence: agent_overrides > standard tier config > model-config.yaml defaults.
 
 ## Workflow (Standard Mode)
 
@@ -88,7 +94,7 @@ gate: "Architect APPROVED + Critic PASS, user approves ADR and plan"
 
 Create an isolated worktree for all plan and implementation work. This keeps main branch clean -- only the final squash merge commit lands on main.
 
-1. **Save the current plan directory path** (e.g., `docs/plans/260313_worktree-workflow/`). You have already read idea.md and research files from here.
+1. **Save the current plan directory path** (e.g., `.robro/sessions/260313_worktree-workflow/`). You have already read idea.md and research files from here.
 
 2. **Create worktree**:
    ```
@@ -106,13 +112,13 @@ Create an isolated worktree for all plan and implementation work. This keeps mai
 4. **Copy plan files from main to worktree**:
    ```bash
    # Copy the entire plan directory (including gitignored research/, discussion/)
-   cp -r /path/to/main-repo/docs/plans/{slug}/ docs/plans/{slug}/
+   cp -r /path/to/main-repo/.robro/sessions/{slug}/ .robro/sessions/{slug}/
    ```
    The source path is the absolute path to the main repo's plan directory that you saved in step 1.
 
 5. **Clean up main's working directory**:
    ```bash
-   rm -rf /path/to/main-repo/docs/plans/{slug}/
+   rm -rf /path/to/main-repo/.robro/sessions/{slug}/
    ```
    This prevents hooks from finding stale state when a session starts from the main repo.
 
@@ -133,6 +139,14 @@ All subsequent work (Steps 2-10) happens inside the worktree. Commits go to the 
 ### Step 2: Technical Deep Dive
 
 Dispatch agents in parallel:
+
+Dispatch with explicit model parameters:
+```
+Agent(subagent_type: "robro:researcher", prompt: "...", model: "sonnet")
+Agent(subagent_type: "robro:architect", prompt: "...", model: "opus")
+Agent(subagent_type: "robro:critic", prompt: "...", model: "opus")
+```
+Standard tier: researcher=sonnet, architect=opus, critic=opus.
 
 1. **Researcher** agent:
    - Deep-dive into technical approaches for each requirement
@@ -217,6 +231,11 @@ Only proceed to plan generation after user approves the technical direction.
 
 Dispatch the **Planner** agent to create the implementation plan. Provide the Planner with: idea.md, all `research/` findings, the Architect's Tradeoff Analysis (for ADR), and the Critic's findings (for Pre-mortem). Handle the Planner's status per the status routing protocol above.
 
+```
+Agent(subagent_type: "robro:planner", prompt: "...", model: "sonnet")
+```
+Standard tier: planner=sonnet.
+
 **Principle**: Assume the implementer has **zero codebase context**. Every task must be specific enough for an agent with no prior knowledge to execute correctly.
 
 The plan must follow this exact format:
@@ -289,6 +308,11 @@ created: {ISO 8601 timestamp}
 ### Step 5: Plan Review Loop
 
 After generating plan.md, dispatch a **plan reviewer subagent** (see `plan-reviewer-prompt.md`):
+
+Dispatch a general-purpose agent as plan reviewer (see `plan-reviewer-prompt.md`):
+```
+Agent(prompt: "{plan reviewer prompt from template}", model: "sonnet")
+```
 
 1. Reviewer checks: completeness, spec alignment, task atomicity, file structure, TDD compliance
 2. If issues found: fix and re-dispatch reviewer
@@ -421,6 +445,10 @@ Record the complexity in spec.yaml's `meta.complexity` field. The do skill reads
 
 After generating spec.yaml, dispatch a **spec reviewer subagent** (see `spec-reviewer-prompt.md`):
 
+```
+Agent(prompt: "{spec reviewer prompt from template}", model: "sonnet")
+```
+
 1. Reviewer checks: completeness, internal consistency, checklist coverage, test plan executability
 2. If issues found: fix and re-dispatch reviewer
 3. Repeat until approved — iterate as many times as needed. After every 3 iterations, inform the user of remaining issues and ask whether to continue or proceed with noted gaps.
@@ -444,6 +472,11 @@ If inconsistencies found, fix them before finalizing.
 
 Dispatch **Architect** + **Critic** for final review of both plan.md and spec.yaml together:
 
+```
+Agent(subagent_type: "robro:architect", prompt: "Final review...", model: "opus")
+Agent(subagent_type: "robro:critic", prompt: "Final review...", model: "opus")
+```
+
 - Architect: verify technical soundness of the complete plan + spec pair
 - Critic: verify completeness, internal consistency, and multi-perspective soundness
 
@@ -454,7 +487,7 @@ If either returns issues, revise and re-validate. Write `.bak` files before over
 After writing both files:
 
 ```
-spec.yaml and plan.md are ready in docs/plans/{directory}/.
+spec.yaml and plan.md are ready in .robro/sessions/{directory}/.
 - {N} phases, {M} tasks, {K} checklist items
 - Ambiguity score: {score}
 - All checklist items start as passes: false

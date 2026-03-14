@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Pre-push hook: sync versions before pushing
+# Install: git config core.hooksPath .githooks
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
+
+CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "${REPO_ROOT}/scripts/sync-versions.sh"

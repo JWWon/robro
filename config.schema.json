@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JWWon/robro/config.schema.json",
+  "title": "Robro Project Configuration",
+  "description": "Project-level configuration for the robro Claude Code plugin. All fields are optional — omitted fields use built-in defaults from model-config.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "model": {
+      "type": "string",
+      "enum": ["haiku", "sonnet", "opus"],
+      "description": "Claude model tier for agent dispatch"
+    },
+    "model_capped": {
+      "type": "string",
+      "enum": ["haiku", "sonnet"],
+      "description": "Claude model tier capped at sonnet (for researcher, retro-analyst, conflict-resolver)"
+    },
+    "tier_config": {
+      "type": "object",
+      "description": "Model assignments for a complexity tier",
+      "additionalProperties": false,
+      "properties": {
+        "default": { "$ref": "#/$defs/model" },
+        "builder": { "$ref": "#/$defs/model" },
+        "reviewer": { "$ref": "#/$defs/model" },
+        "architect": { "$ref": "#/$defs/model" },
+        "critic": { "$ref": "#/$defs/model" },
+        "researcher": { "$ref": "#/$defs/model_capped" },
+        "retro-analyst": { "$ref": "#/$defs/model_capped" },
+        "conflict-resolver": { "$ref": "#/$defs/model_capped" },
+        "planner": { "$ref": "#/$defs/model" },
+        "contrarian": { "$ref": "#/$defs/model" },
+        "simplifier": { "$ref": "#/$defs/model" },
+        "ontologist": { "$ref": "#/$defs/model" }
+      }
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path to this schema file for editor validation"
+    },
+    "model_tiers": {
+      "type": "object",
+      "description": "Override model assignments per complexity tier. Unspecified agents use model-config.yaml defaults.",
+      "additionalProperties": false,
+      "properties": {
+        "light": { "$ref": "#/$defs/tier_config" },
+        "standard": { "$ref": "#/$defs/tier_config" },
+        "complex": { "$ref": "#/$defs/tier_config" }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "description": "Override skill thresholds",
+      "additionalProperties": false,
+      "properties": {
+        "ambiguity_threshold": {
+          "type": "number",
+          "description": "Maximum ambiguity score to pass the idea/plan gate. Lower = stricter.",
+          "default": 0.1,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "sprint_hard_cap": {
+          "type": "integer",
+          "description": "Maximum number of sprints before forcing convergence.",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 100
+        },
+        "plan_max_iterations": {
+          "type": "integer",
+          "description": "Maximum review iterations in plan skill. 0 = no cap (quality-driven).",
+          "default": 0,
+          "minimum": 0
+        }
+      }
+    },
+    "agent_overrides": {
+      "type": "object",
+      "description": "Per-agent model overrides. Takes highest precedence over tier defaults.",
+      "additionalProperties": false,
+      "properties": {
+        "builder": { "$ref": "#/$defs/model" },
+        "reviewer": { "$ref": "#/$defs/model" },
+        "architect": { "$ref": "#/$defs/model" },
+        "critic": { "$ref": "#/$defs/model" },
+        "researcher": { "$ref": "#/$defs/model_capped" },
+        "retro-analyst": { "$ref": "#/$defs/model_capped" },
+        "conflict-resolver": { "$ref": "#/$defs/model_capped" },
+        "planner": { "$ref": "#/$defs/model" },
+        "contrarian": { "$ref": "#/$defs/model" },
+        "simplifier": { "$ref": "#/$defs/model" },
+        "ontologist": { "$ref": "#/$defs/model" }
+      }
+    }
+  }
+}

@@ -38,7 +38,7 @@ This applies to EVERY project regardless of perceived simplicity. "Simple" proje
 
 ## Pipeline Status Tracking
 
-At every step transition, update `status.yaml` (at plan root, e.g. `docs/plans/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
+At every step transition, update `status.yaml` (at plan root, e.g. `.robro/sessions/YYMMDD_{slug}/status.yaml`) with your current position. This file drives the hook system — hooks read it to inject focused guidance that survives context compression.
 
 ```yaml
 skill: idea
@@ -61,7 +61,7 @@ Update `detail` and `next` after EVERY round. Update `step` at step transitions.
 Create the plan directory structure:
 
 ```
-docs/plans/YYMMDD_{slug}/
+.robro/sessions/YYMMDD_{slug}/
   research/
   discussion/
 ```
@@ -113,7 +113,7 @@ This becomes the `type` field in idea.md frontmatter. If unclear from context, a
 - If the request describes **multiple independent subsystems** (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately
 - Don't spend questions refining details of a project that needs to be decomposed first
 - Help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built?
-- Each sub-project gets its own `docs/plans/` directory and separate idea → spec cycle
+- Each sub-project gets its own `.robro/sessions/` directory and separate idea → spec cycle
 
 ### Step 2: Codebase & Context Scan
 
@@ -124,6 +124,16 @@ Before asking the user anything, gather facts:
    - Identify frameworks, dependencies, architectural patterns from directory structure
    - Find existing conventions (naming, testing, error handling)
    - Locate related code that touches the area described in `$ARGUMENTS`
+
+   Dispatch with explicit model parameter:
+   ```
+   Agent(
+     subagent_type: "robro:researcher",
+     prompt: "Perform brownfield detection: scan config files, frameworks, conventions, related code...",
+     model: "sonnet"
+   )
+   ```
+   The idea skill uses `standard` tier. Researcher maps to `sonnet`.
 
 2. **Determine project type**:
    - **Greenfield**: No existing codebase — use greenfield ambiguity weights
@@ -275,6 +285,16 @@ Challenge modes are **inline perspective shifts**, not subagent dispatches. Read
 
 **Escalation to subagent**: If inline analysis is insufficient (the challenge surfaces a complex issue requiring deep investigation), dispatch the corresponding agent as a subagent with the current interview summary, ambiguity scores, requirements list, and research context. This should be rare — inline mode handles most cases.
 
+When escalating to a subagent:
+```
+Agent(
+  subagent_type: "robro:contrarian",  // or simplifier, ontologist
+  prompt: "Review current interview state and challenge assumptions...",
+  model: "sonnet"
+)
+```
+Challenge agents map to `sonnet` in standard tier.
+
 ### Step 6: Round Milestones
 
 - **Round 3+**: User can request early exit. Warn about remaining ambiguity.
@@ -287,6 +307,14 @@ During the interview, dispatch the **Researcher** agent for web research wheneve
 - A domain-specific topic arises that needs current information
 - The user mentions an external API, service, or standard
 - Best practices or industry patterns are relevant to a decision
+
+```
+Agent(
+  subagent_type: "robro:researcher",
+  prompt: "Research {topic}: current best practices, API documentation...",
+  model: "sonnet"
+)
+```
 
 ### Step 8: Pre-Write Confirmation
 

@@ -28,7 +28,7 @@ You are auditing a project's Claude Code configuration for gaps, stale items, an
 
 Check for active builds that could conflict:
 
-1. Scan `docs/plans/*/status.yaml` for any file where `skill: do` is set
+1. Scan `.robro/sessions/*/status.yaml` for any file where `skill: do` is set
 2. If found, warn via AskUserQuestion:
    "A build is in progress ({plan directory}). Running /robro:tune during a build may conflict with level-up changes. Continue anyway?"
    Options: "Continue anyway", "Cancel — I'll run tune after the build"
@@ -102,7 +102,7 @@ Each suggestion follows the format:
 
 **Data source acknowledgment**: This analysis uses static codebase and git history. For deeper insights informed by actual execution data, run a `/robro:do` sprint — the retro phase performs sprint-informed configuration analysis automatically.
 
-**Optional retro ingestion**: If `docs/plans/*/discussion/retro-sprint-*.md` files exist, offer to incorporate findings from past retros for richer analysis.
+**Optional retro ingestion**: If `.robro/sessions/*/discussion/retro-sprint-*.md` files exist, offer to incorporate findings from past retros for richer analysis.
 
 ### Step 7: Present Findings
 

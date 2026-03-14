@@ -14,7 +14,7 @@ Robro's planning pipeline prioritizes thoroughness over speed. The goal: collect
 
 - **Skills own interaction; agents are workers.** Only skills can use AskUserQuestion. Agents receive context, do analysis, return structured output. Never create an agent that needs to ask the user anything.
 - **Quality-driven iteration, not arbitrary caps.** Review loops exit on passing verdicts, not round counts. Every 3 iterations, check in with the user. Never silently give up.
-- **Status.yaml drives hooks.** All skills persist their position to `status.yaml` at plan root (`docs/plans/*/status.yaml`). Hooks read it and inject focused "you are HERE, do THIS next" — not a rules dump.
+- **Status.yaml drives hooks.** All skills persist their position to `status.yaml` at plan root (`.robro/sessions/*/status.yaml`). Hooks read it and inject focused "you are HERE, do THIS next" — not a rules dump.
 - **Skills get compressed. Hooks don't.** As context grows, Claude compresses skill instructions. Hooks fire fresh every time. Critical guardrails live in hooks + on-disk state files.
 - **Challenge modes are inline lenses.** Read the agent file, adopt that analytical perspective, apply it to current state. Only escalate to a subagent when inline analysis is insufficient.
 - **Structured agent status protocol.** All agents return `DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED`. The orchestrating skill routes on status before processing output.
@@ -104,7 +104,7 @@ robro/
 │   ├── pre-compact.sh       # Persist pipeline state before context compression
 │   ├── stop-hook.sh         # Auto-continue do execution with circuit breakers
 │   └── error-tracker.sh     # Track recent errors for rate limit detection
-└── docs/plans/              # Generated plan artifacts (per project)
+└── .robro/sessions/              # Generated plan artifacts (per project)
     └── YYMMDD_{name}/
         ├── idea.md           # Product requirements (from /robro:idea)
         ├── plan.md           # Implementation phases (from /robro:plan)
@@ -125,7 +125,7 @@ robro/
 
 ### Plan Artifacts
 
-Each plan lives in `docs/plans/YYMMDD_{name}/`:
+Each plan lives in `.robro/sessions/YYMMDD_{name}/`:
 - **`idea.md`** — Markdown + YAML frontmatter. Product requirements, constraints, success criteria.
 - **`plan.md`** — Markdown + YAML frontmatter. Phased task breakdown with dependency ordering and parallel execution.
 - **`spec.yaml`** — Pure YAML. Validation source of truth. Checklist items with `passes: false/true` flags. All tests and verification derive from this file. Items can never be removed — only `passes` can be flipped.
@@ -140,7 +140,7 @@ Each plan lives in `docs/plans/YYMMDD_{name}/`:
 
 Each plan cycle uses a git worktree for branch isolation:
 
-1. `/robro:idea` works on **main** (creates `docs/plans/{slug}/`, makes no commits)
+1. `/robro:idea` works on **main** (creates `.robro/sessions/{slug}/`, makes no commits)
 2. `/robro:plan` creates a worktree at `.claude/worktrees/{slug}/` via `EnterWorktree`, copies plan files, and works on branch `plan/{slug}`
 3. `/robro:do` works inside the worktree, commits freely to the plan branch
 4. Converge phase: after all gates pass, user approves squash merge to main
@@ -211,3 +211,16 @@ claude --debug
 ### Versioning
 
 Version follows semver in `.claude-plugin/plugin.json`. Bump the version when releasing changes to installed users. After squash merge to main, create a tag: `git tag v{version} && git push origin v{version}`.
+
+#### Version Sync
+
+plugin.json is the single source of truth for the version number. marketplace.json is synced automatically:
+
+- `scripts/sync-versions.sh` copies the version from plugin.json to marketplace.json
+- `.githooks/pre-push` triggers the sync before every push
+- Setup: `git config core.hooksPath .githooks` (run once per clone)
+
+When bumping the version:
+1. Update `version` in `.claude-plugin/plugin.json` only
+2. The pre-push hook syncs marketplace.json automatically
+3. After squash merge to main: `git tag v{version} && git push origin v{version}`

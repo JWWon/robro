@@ -8,16 +8,20 @@ PROMPT=$(echo "$INPUT" | jq -r '.prompt // .content // ""' 2>/dev/null)
 # Normalize: lowercase, trim
 PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' | xargs)
 
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
+
 # Skip if empty or too short
 [ ${#PROMPT_LOWER} -lt 3 ] && exit 0
 
 # Skip if already invoking a robro skill
 echo "$PROMPT_LOWER" | grep -q "^/robro:" && exit 0
 
-# Check for active spec in docs/plans/
+# Check for active spec in sessions dir
 has_spec=false
-if [ -d "docs/plans" ]; then
-  for dir in docs/plans/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -f "${dir}spec.yaml" ] && has_spec=true && break
   done
 fi
@@ -95,8 +99,8 @@ for pattern in "${spec_patterns[@]}"; do
     if [ "$has_spec" = false ]; then
       # Check if idea.md exists
       has_idea=false
-      if [ -d "docs/plans" ]; then
-        for dir in docs/plans/*/; do
+      if [ -d "$SESSIONS_DIR" ]; then
+        for dir in "$SESSIONS_DIR"/*/; do
           [ -f "${dir}idea.md" ] && has_idea=true && break
         done
       fi
@@ -145,7 +149,7 @@ for pattern in "${impl_patterns[@]}"; do
     if [ "$has_spec" = true ]; then
       echo "A spec exists. Consider using /robro:do for structured autonomous execution."
     elif [ "$has_spec" = false ]; then
-      echo "No spec found in docs/plans/. Consider running /robro:idea then /robro:plan before implementing to ensure clear requirements and a validated plan."
+      echo "No spec found. Consider running /robro:idea then /robro:plan before implementing to ensure clear requirements and a validated plan."
     fi
     exit 0
   fi

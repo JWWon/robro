@@ -5,6 +5,10 @@
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.filePath // ""' 2>/dev/null)
 
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
+
 # Skip if no file path or if editing non-source files
 [ -z "$FILE_PATH" ] && exit 0
 
@@ -17,8 +21,8 @@ esac
 # Try to match the edited file to a specific spec by checking plan.md File Maps
 # Fall back to most recently modified spec if no match found
 matched_spec=""
-if [ -d "docs/plans" ]; then
-  for plan in docs/plans/*/plan.md; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for plan in "$SESSIONS_DIR"/*/plan.md; do
     [ -f "$plan" ] || continue
     # Check if file path appears in this plan's File Map
     if grep -q "$(basename "$FILE_PATH")" "$plan" 2>/dev/null; then
@@ -29,9 +33,9 @@ if [ -d "docs/plans" ]; then
 fi
 
 # Fall back to most recently modified spec
-if [ -z "$matched_spec" ] && [ -d "docs/plans" ]; then
+if [ -z "$matched_spec" ] && [ -d "$SESSIONS_DIR" ]; then
   latest_mtime=0
-  for spec in docs/plans/*/spec.yaml; do
+  for spec in "$SESSIONS_DIR"/*/spec.yaml; do
     [ -f "$spec" ] || continue
     if stat -f %m "$spec" >/dev/null 2>&1; then
       mtime=$(stat -f %m "$spec")

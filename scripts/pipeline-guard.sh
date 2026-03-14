@@ -11,14 +11,16 @@ PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' | xargs)
 [ ${#PROMPT_LOWER} -lt 3 ] && exit 0
 echo "$PROMPT_LOWER" | grep -q "^/robro:" && exit 0
 
-PLANS_DIR="docs/plans"
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
 
 # Find the most recently modified status.yaml (always at plan root)
 status_file=""
 latest_mtime=0
 
-if [ -d "$PLANS_DIR" ]; then
-  for dir in "$PLANS_DIR"/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue

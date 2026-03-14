@@ -2,7 +2,9 @@
 # SessionStart hook: Detect active pipeline and guide resume
 # Principle: tell the agent WHERE it is and WHAT to do. Not the rules — the skill handles that.
 
-PLANS_DIR="docs/plans"
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
 
 context="Robro plugin active. Skills: /robro:idea (PM) | /robro:plan (EM) | /robro:do (Builder)"
 
@@ -10,8 +12,8 @@ context="Robro plugin active. Skills: /robro:idea (PM) | /robro:plan (EM) | /rob
 status_file=""
 latest_mtime=0
 
-if [ -d "$PLANS_DIR" ]; then
-  for dir in "$PLANS_DIR"/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue
@@ -80,13 +82,13 @@ Next: ${next_action}"
   fi
 fi
 
-# If no active status found in docs/plans/, check worktrees for active plans
+# If no active status found in sessions dir, check worktrees for active plans
 if [ -z "$status_file" ] || [ "$skill" = "none" ] || [ -z "$skill" ]; then
   WORKTREE_DIR=".claude/worktrees"
   if [ -d "$WORKTREE_DIR" ]; then
     for wt_dir in "$WORKTREE_DIR"/*/; do
       [ -d "$wt_dir" ] || continue
-      for plan_dir in "${wt_dir}docs/plans"/*/; do
+      for plan_dir in "${wt_dir}.robro/sessions"/*/; do
         [ -d "$plan_dir" ] || continue
         candidate="${plan_dir}status.yaml"
         [ -f "$candidate" ] || continue
@@ -108,8 +110,8 @@ fi
 
 # List all plans briefly
 all_plans=""
-if [ -d "$PLANS_DIR" ]; then
-  for dir in "$PLANS_DIR"/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     name=$(basename "$dir")
     artifacts=""

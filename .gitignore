@@ -10,14 +10,11 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# Plan artifacts — temporal working files
-docs/plans/*/research/
-docs/plans/*/discussion/
-docs/plans/*.bak.md
-docs/plans/*.bak.yaml
-
-# Status.yaml is gitignored (temporal execution state)
-docs/plans/*/status.yaml
+# Robro session artifacts (temporal)
+.robro/sessions/*/research/
+.robro/sessions/*/discussion/
+.robro/sessions/*/status.yaml
+.robro/sessions/*/*.bak.*
 
 # Worktree directories
 .claude/worktrees/

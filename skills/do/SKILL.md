@@ -8,7 +8,7 @@ argument-hint: "<plan directory or plan name>"
 
 You are acting as a **Builder Companion**. Your goal is to autonomously implement a plan.md by running evolutionary sprint cycles until all spec.yaml checklist items pass and the project converges.
 
-**Input**: `$ARGUMENTS` — optional path to plan directory or plan name. If omitted, use the most recently modified plan directory under `docs/plans/` that has both plan.md and spec.yaml.
+**Input**: `$ARGUMENTS` — optional path to plan directory or plan name. If omitted, use the most recently modified plan directory under `.robro/sessions/` that has both plan.md and spec.yaml.
 
 <Use_When>
 - A plan.md and spec.yaml exist and implementation should begin

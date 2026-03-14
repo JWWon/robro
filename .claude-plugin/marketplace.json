@@ -9,7 +9,7 @@
     {
       "name": "robro",
       "description": "Claude Code plugin that transforms a simple agent into a structured planning and execution partner",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "author": {
         "name": "JWWon"
       },
@@ -18,8 +18,21 @@
       "homepage": "https://github.com/JWWon/robro",
       "repository": "https://github.com/JWWon/robro",
       "license": "MIT",
-      "keywords": ["planning", "spec", "requirements", "idea", "build", "implementation"],
-      "tags": ["planning", "execution", "pipeline", "tdd", "multi-agent"]
+      "keywords": [
+        "planning",
+        "spec",
+        "requirements",
+        "idea",
+        "build",
+        "implementation"
+      ],
+      "tags": [
+        "planning",
+        "execution",
+        "pipeline",
+        "tdd",
+        "multi-agent"
+      ]
     }
   ]
 }

@@ -5,6 +5,10 @@
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.filePath // ""' 2>/dev/null)
 
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
+
 # Skip if no file path
 [ -z "$FILE_PATH" ] && exit 0
 
@@ -22,10 +26,10 @@ case "$FILE_PATH" in
     ;;
 esac
 
-# Check if any spec.yaml exists in docs/plans/
+# Check if any spec.yaml exists in sessions dir
 has_spec=false
-if [ -d "docs/plans" ]; then
-  for dir in docs/plans/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -f "${dir}spec.yaml" ] && has_spec=true && break
   done
 fi
@@ -33,8 +37,8 @@ fi
 if [ "$has_spec" = false ]; then
   # Check if any idea.md exists (user at least started the process)
   has_idea=false
-  if [ -d "docs/plans" ]; then
-    for dir in docs/plans/*/; do
+  if [ -d "$SESSIONS_DIR" ]; then
+    for dir in "$SESSIONS_DIR"/*/; do
       [ -f "${dir}idea.md" ] && has_idea=true && break
     done
   fi
@@ -49,7 +53,7 @@ fi
 # During active build, validate that file edits are within scope of current task
 if [ "$has_spec" = true ]; then
   # Check if build is active
-  for dir in docs/plans/*/; do
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     status_candidate="${dir}status.yaml"
     [ -f "$status_candidate" ] || continue

@@ -20,7 +20,7 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 
 ### Plan Artifacts
 
-Plans live in `docs/plans/YYMMDD_{name}/`:
+Plans live in `.robro/sessions/YYMMDD_{name}/`:
 - `idea.md` — Product requirements from /robro:idea
 - `plan.md` — Phased implementation tasks from /robro:plan
 - `spec.yaml` — Validation checklist (source of truth for testing)

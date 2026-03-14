@@ -2,11 +2,13 @@
 # PreCompact hook: Ensure pipeline state is persisted before context compression
 # Skill-aware: tells the agent which files matter for the active skill.
 
-PLANS_DIR="docs/plans"
+# Load shared config
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib/load-config.sh"
 
 # Find active status file (always at plan root)
-if [ -d "$PLANS_DIR" ]; then
-  for dir in "$PLANS_DIR"/*/; do
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
     [ -d "$dir" ] || continue
     candidate="${dir}status.yaml"
     [ -f "$candidate" ] || continue
