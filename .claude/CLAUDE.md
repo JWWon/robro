@@ -56,7 +56,7 @@ The body is the agent's system prompt. Agents appear in `/agents` and can be aut
 Available events (case-sensitive): `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `UserPromptSubmit`, `Notification`, `Stop`, `SubagentStart`, `SubagentStop`, `SessionStart`, `SessionEnd`, `TeammateIdle`, `TaskCompleted`, `PreCompact`.
 
 Hook types: `command` (shell), `prompt` (LLM eval), `agent` (agentic verifier).
-<!-- robro@0.1.2:managed:start -->
+<!-- robro@0.2.0:managed:start -->
 ## Robro Plugin
 
 Robro extends Claude Code with a structured planning and execution pipeline.

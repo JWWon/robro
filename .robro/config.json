@@ -1,3 +1,23 @@
 {
-  "$schema": "https://raw.githubusercontent.com/JWWon/robro/main/config.schema.json"
+  "$schema": "https://raw.githubusercontent.com/JWWon/robro/main/config.schema.json",
+  "providers": {
+    "codex": {
+      "enabled": true,
+      "binary": "codex",
+      "model": "gpt-5.4",
+      "approval_mode": "full-auto",
+      "sandbox": true,
+      "strengths": ["code-review", "security-audit", "verification", "reasoning"],
+      "timeout_ms": 300000
+    },
+    "gemini": {
+      "enabled": true,
+      "binary": "gemini",
+      "model": "gemini-3.1-pro",
+      "approval_mode": "yolo",
+      "thinking_level": "auto",
+      "strengths": ["multimodal", "large-context", "ui-analysis", "second-opinion"],
+      "timeout_ms": 300000
+    }
+  }
 }
