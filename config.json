@@ -1,0 +1,47 @@
+{
+  "$schema": "./config.schema.json",
+  "model_tiers": {
+    "light": {
+      "default": "haiku",
+      "builder": "haiku",
+      "reviewer": "sonnet",
+      "architect": "sonnet",
+      "critic": "sonnet",
+      "researcher": "haiku",
+      "retro-analyst": "haiku",
+      "conflict-resolver": "haiku",
+      "planner": "haiku",
+      "contrarian": "haiku",
+      "simplifier": "haiku",
+      "ontologist": "haiku"
+    },
+    "standard": {
+      "default": "sonnet",
+      "builder": "sonnet",
+      "reviewer": "sonnet",
+      "architect": "opus",
+      "critic": "opus",
+      "researcher": "sonnet",
+      "retro-analyst": "sonnet",
+      "conflict-resolver": "sonnet",
+      "planner": "sonnet",
+      "contrarian": "sonnet",
+      "simplifier": "sonnet",
+      "ontologist": "sonnet"
+    },
+    "complex": {
+      "default": "opus",
+      "builder": "opus",
+      "reviewer": "opus",
+      "architect": "opus",
+      "critic": "opus",
+      "researcher": "sonnet",
+      "retro-analyst": "sonnet",
+      "conflict-resolver": "sonnet",
+      "planner": "opus",
+      "contrarian": "opus",
+      "simplifier": "opus",
+      "ontologist": "opus"
+    }
+  }
+}

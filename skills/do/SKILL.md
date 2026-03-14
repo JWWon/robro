@@ -71,7 +71,7 @@ Summary:
 - Identify knowledge gaps, fetch JIT docs via context7/web search
 - Analyze File Map, detect file overlaps, plan parallel execution levels
 - Reset stop hook counter file
-- Load model-config.yaml and select complexity tier for agent dispatch
+- Load config.json and select complexity tier for agent dispatch
 
 ### Phase 2: Heads-down
 Read `skills/do/heads-down-phase.md` for detailed instructions.

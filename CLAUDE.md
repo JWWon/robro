@@ -151,7 +151,7 @@ Cross-session resume: If a session starts from main while a worktree is active, 
 
 ### Model Configuration
 
-`model-config.yaml` at plugin root defines 3 complexity tiers (light/standard/complex) mapping agent roles to models (haiku/sonnet/opus). The do skill reads complexity from spec.yaml and dispatches agents with the appropriate model.
+`config.json` at plugin root defines 3 complexity tiers (light/standard/complex) mapping agent roles to models (haiku/sonnet/opus). The do skill reads complexity from spec.yaml and dispatches agents with the appropriate model.
 
 ### Known Limitations
 

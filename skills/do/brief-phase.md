@@ -32,7 +32,7 @@ reinforcement_count: 0
 Read the complexity tier and load model mappings for agent dispatch:
 
 1. Read `meta.complexity` from spec.yaml. Expected values: `light`, `standard`, `complex`. Default to `standard` if missing.
-2. Read `${CLAUDE_PLUGIN_ROOT}/model-config.yaml` to load the tier definitions.
+2. Read `${CLAUDE_PLUGIN_ROOT}/config.json` to load the tier definitions.
 3. Select the tier matching the complexity value.
 3b. **Check for project config overrides**: Read `.robro/config.json` if it exists at the project root.
    - If `model_tiers.{complexity}` has agent-specific overrides, apply them on top of YAML defaults

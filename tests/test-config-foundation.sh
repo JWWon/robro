@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test: config foundation — load-config.sh, .gitignore, config.schema.json, model-config.yaml
+# Test: config foundation — load-config.sh, .gitignore, config.schema.json, config.json
 # Validates spec items C1, C4, C11, C12
 
 set -euo pipefail
@@ -184,41 +184,28 @@ else
 fi
 
 # ===========================================================================
-# C12: model-config.yaml has all 11 agents in each tier
+# C12: config.json has all 11 agents in each tier
 # ===========================================================================
 
-MODEL_CONFIG="$REPO_ROOT/model-config.yaml"
-
-EXPECTED_AGENTS=(builder reviewer architect critic researcher retro-analyst conflict-resolver planner contrarian simplifier ontologist)
+CONFIG_JSON="$REPO_ROOT/config.json"
 
 for tier in light standard complex; do
-  for agent in "${EXPECTED_AGENTS[@]}"; do
-    if python3 -c "
-import yaml, sys
-d = yaml.safe_load(open('$MODEL_CONFIG'))
-if '$agent' in d['tiers']['$tier']:
-    sys.exit(0)
-else:
-    sys.exit(1)
-" 2>/dev/null; then
-      pass "model-config.yaml: $tier tier has $agent"
+  for agent in builder reviewer architect critic researcher retro-analyst conflict-resolver planner contrarian simplifier ontologist; do
+    if jq -e ".model_tiers.$tier | has(\"$agent\")" "$CONFIG_JSON" > /dev/null 2>&1; then
+      pass "config.json: $tier tier has $agent"
     else
-      fail "model-config.yaml: $tier tier missing $agent"
+      fail "config.json: $tier tier missing $agent"
     fi
   done
 done
 
 # Check total count per tier (should be 11 agents + default = 12, so 11 non-default)
 for tier in light standard complex; do
-  count=$(python3 -c "
-import yaml
-d = yaml.safe_load(open('$MODEL_CONFIG'))
-print(len([k for k in d['tiers']['$tier'] if k != 'default']))
-" 2>/dev/null)
-  if [[ "$count" == "11" ]]; then
-    pass "model-config.yaml: $tier tier has exactly 11 agents (excluding default)"
+  count=$(jq -r ".model_tiers.$tier | keys | map(select(. != \"default\")) | length" "$CONFIG_JSON")
+  if [ "$count" -eq 11 ]; then
+    pass "config.json: $tier tier has exactly 11 agents (excluding default)"
   else
-    fail "model-config.yaml: $tier tier has $count agents instead of 11"
+    fail "config.json: $tier tier has $count agents instead of 11"
   fi
 done
 

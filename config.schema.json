@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/JWWon/robro/config.schema.json",
   "title": "Robro Project Configuration",
-  "description": "Project-level configuration for the robro Claude Code plugin. All fields are optional — omitted fields use built-in defaults from model-config.yaml.",
+  "description": "Project-level configuration for the robro Claude Code plugin. All fields are optional — omitted fields use built-in defaults from config.json.",
   "type": "object",
   "additionalProperties": false,
   "$defs": {
@@ -43,7 +43,7 @@
     },
     "model_tiers": {
       "type": "object",
-      "description": "Override model assignments per complexity tier. Unspecified agents use model-config.yaml defaults.",
+      "description": "Override model assignments per complexity tier. Unspecified agents use config.json defaults.",
       "additionalProperties": false,
       "properties": {
         "light": { "$ref": "#/$defs/tier_config" },

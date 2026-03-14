@@ -97,11 +97,35 @@ if [ -z "$status_file" ] || [ "$skill" = "none" ] || [ -z "$skill" ]; then
         wt_name=$(basename "$wt_dir")
         wt_step=$(grep "^step:" "$candidate" 2>/dev/null | head -1 | sed 's/^step: *//; s/"//g')
         wt_detail=$(grep "^detail:" "$candidate" 2>/dev/null | head -1 | sed 's/^detail: *//; s/"//g')
-        context="${context}
+        # Check spec completion for build worktrees
+        wt_spec="${plan_dir}spec.yaml"
+        if [ "$wt_skill" = "do" ] && [ -f "$wt_spec" ]; then
+          spec_total=$(grep -c "passes:" "$wt_spec" 2>/dev/null || echo "0")
+          spec_superseded=$(grep -c "status: superseded" "$wt_spec" 2>/dev/null || echo "0")
+          spec_passed=$(grep -c "passes: true" "$wt_spec" 2>/dev/null || echo "0")
+          spec_effective=$((spec_total - spec_superseded))
+
+          if [ "$spec_passed" -ge "$spec_effective" ] && [ "$spec_effective" -gt 0 ]; then
+            context="${context}
+
+WORKTREE READY: Plan '$(basename "$plan_dir")' — all ${spec_passed}/${spec_effective} spec items pass.
+Branch: plan/$(basename "$plan_dir") in worktree '${wt_name}'.
+To merge: Run EnterWorktree(name: \"${wt_name}\"), then use /robro:do to run convergence and merge."
+          else
+            context="${context}
+
+WORKTREE RESUME: Plan '$(basename "$plan_dir")' — build in progress (${spec_passed}/${spec_effective} passing).
+Skill: /robro:${wt_skill}, step ${wt_step} (${wt_detail})
+To resume: Run EnterWorktree(name: \"${wt_name}\") to continue building."
+          fi
+        else
+          # Non-build skills (idea, plan) — generic resume message
+          context="${context}
 
 WORKTREE RESUME: Plan '$(basename "$plan_dir")' is active in worktree '${wt_name}'.
 Skill: /robro:${wt_skill}, step ${wt_step} (${wt_detail})
 To resume: Run EnterWorktree(name: \"${wt_name}\") to switch to the worktree."
+        fi
         break 2
       done
     done

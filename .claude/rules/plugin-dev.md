@@ -9,7 +9,7 @@
 | Hook config | `hooks/hooks.json` | Single file, references scripts |
 | Hook scripts | `scripts/<name>.sh` | `scripts/session-start.sh` |
 | Plugin manifest | `.claude-plugin/plugin.json` | Only plugin.json + marketplace.json in .claude-plugin/ |
-| Model config | `model-config.yaml` | Plugin root |
+| Model config | `config.json` | Plugin root |
 | Setup template | `skills/setup/claude-md-template.md` | Injected into user projects by /robro:setup |
 
 ## Script Requirements
