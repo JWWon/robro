@@ -29,7 +29,7 @@ while IFS=: read -r name model timeout_ms; do
   # Build invocation template based on provider name
   case "$name" in
     codex)
-      template="timeout ${timeout_sec} codex exec --full-auto --ephemeral -c model=\\\"${model}\\\" \"{prompt}\" 2>/dev/null"
+      template="timeout ${timeout_sec} codex exec --full-auto --sandbox --ephemeral -c model=\\\"${model}\\\" \"{prompt}\" 2>/dev/null"
       ;;
     gemini)
       template="timeout ${timeout_sec} gemini -p \"{prompt}\" --approval-mode=yolo --output-format json -m ${model} 2>/dev/null | jq -r '.response // .'"

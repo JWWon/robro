@@ -11,6 +11,48 @@
       "enum": ["haiku", "sonnet", "opus"],
       "description": "Claude model tier for agent dispatch"
     },
+    "generic_provider": {
+      "type": "object",
+      "description": "External AI provider configuration",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Model identifier for the provider"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Invocation timeout in milliseconds",
+          "default": 300000
+        },
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Advisory focus areas for gate-to-provider routing. Used by advisory-start.sh to determine designated provider per agent role."
+        }
+      }
+    },
+    "codex_provider": {
+      "type": "object",
+      "description": "Codex (OpenAI) provider configuration",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Codex model identifier"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "description": "Invocation timeout in milliseconds",
+          "default": 300000
+        },
+        "strengths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Advisory focus areas for gate-to-provider routing. Codex: code-review, code-analysis, security-audit, critical-thinking. Gemini: multimodal, large-context, ui-analysis."
+        }
+      }
+    },
     "model_capped": {
       "type": "string",
       "enum": ["haiku", "sonnet"],
@@ -144,6 +186,15 @@
     "$schema": {
       "type": "string",
       "description": "Path to this schema file for editor validation"
+    },
+    "providers": {
+      "type": "object",
+      "description": "External AI provider configurations for multi-model advisory",
+      "additionalProperties": false,
+      "properties": {
+        "codex": { "$ref": "#/$defs/codex_provider" },
+        "gemini": { "$ref": "#/$defs/generic_provider" }
+      }
     },
     "model_tiers": {
       "type": "object",

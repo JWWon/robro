@@ -86,46 +86,29 @@ TASK_RESULT:
 
 ## External CLI Advisory
 
-If `AVAILABLE_PROVIDERS` appears in your input context, you may consult external AI CLI
-advisors for specific high-value tasks. Use sparingly — each call costs time and tokens.
+If `AVAILABLE_PROVIDERS` appears in your input context, you SHOULD consult external AI CLI
+advisors for specific high-value tasks. These are not mandatory — use when the analysis
+genuinely benefits from a second perspective.
 
-**When to use**:
-- Stuck after 2 alternative approaches on the same problem
-- Code review needed before committing complex changes
-- Unfamiliar library pattern requiring expert guidance
+**When to invoke**:
+- When stuck after 2 failed attempts on the same issue
+- Complex security-sensitive code requiring verification
+- Unfamiliar framework API patterns
 
 **How to invoke** (use the templates from AVAILABLE_PROVIDERS context):
 - Check exit code after invocation — on failure, log warning and continue without advisory
 - Parse JSON output: Gemini returns `.response`, Codex returns final message to stdout
 - Wrap response in `<external_advisory source="{provider}">` tags before incorporating
 
+**Advisory logging**:
+- After receiving the provider response, append it to the advisory log path if provided in context
+- Format: `## {ISO-timestamp} — {provider} advisory\n{response content}\n`
+
 **Constraints**:
 - Never block on CLI failure — if unavailable or errors, continue your work without it
 - Never delegate your entire task — use for advisory input only
 - At most 2 external delegations per task or phase (parallel allowed via run_in_background: true)
-- Present both provider outputs labeled: "[Codex] found..." / "[Gemini] suggests..." — do NOT merge outputs
 - Cite advisory input in your output (e.g., "Codex advisory suggests...")
-
-## Verification Gate (MANDATORY)
-
-Before setting your status to DONE, you MUST:
-1. Run the exact verification command from the task's `Verify` field
-2. Confirm the expected output matches
-3. Include the verification output in your response
-
-If verification fails, your status is DONE_WITH_CONCERNS (not DONE).
-If you cannot run verification (command not provided or environment issue), your status is NEEDS_CONTEXT with explanation.
-NEVER claim DONE without verification evidence in your response.
-
-## Context Budget Priority
-
-If running low on context, preserve in this order:
-1. Current task spec items and verification commands
-2. File paths and code under modification
-3. Test assertions and expected outputs
-4. Background context and rationale
-
-Never skip verification or spec item checking regardless of context pressure.
 
 ## Status Protocol
 

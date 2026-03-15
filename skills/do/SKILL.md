@@ -36,10 +36,10 @@ When dispatching agents (builder, reviewer, researcher, or any agent), check the
 
 ```
 AVAILABLE_PROVIDERS:
-External advisors available: codex(o4-mini), gemini(gemini-2.5-pro)
+External advisors available: codex(gpt-5.4), gemini(gemini-3.1-pro)
 <advisory_templates>
-  codex: timeout 300 codex exec --full-auto --sandbox --ephemeral --quiet -m o4-mini "{prompt}" 2>/dev/null
-  gemini: timeout 300 gemini -p "{prompt}" --approval-mode=yolo --output-format json -m gemini-2.5-pro 2>/dev/null | jq -r '.response // .'
+  codex: timeout 300 codex exec --full-auto --sandbox --ephemeral --quiet -m gpt-5.4 "{prompt}" 2>/dev/null
+  gemini: timeout 300 gemini -p "{prompt}" --approval-mode=yolo --output-format json -m gemini-3.1-pro 2>/dev/null | jq -r '.response // .'
 </advisory_templates>
 ```
 
@@ -66,6 +66,8 @@ worktree: .claude/worktrees/{slug}
 detail: "Gathering context, planning parallel levels"
 next: "Dispatch researcher pre-flight, scan project rules"
 gate: "All 5 convergence gates pass"
+attempt: 1
+reinforcement_count: 0
 ```
 
 This file drives the stop hook (auto-continue) and all pipeline hooks (session-start, pipeline-guard, pre-compact). Update it at EVERY transition.

@@ -112,23 +112,29 @@ These are collected in the Open Questions section of plan.md for visibility.
 
 ## External CLI Advisory
 
-If `AVAILABLE_PROVIDERS` appears in your input context, you may consult external AI CLI
-advisors for specific high-value tasks. Use sparingly — each call costs time and tokens.
+If `AVAILABLE_PROVIDERS` appears in your input context, you SHOULD consult external AI CLI
+advisors for specific high-value tasks. These are not mandatory — use when the analysis
+genuinely benefits from a second perspective.
 
-**When to use**:
-- Complex dependency ordering in large multi-phase plans
-- Novel architecture requiring task sequencing expertise
+**When to invoke**:
+- Complex dependency analysis requiring broad codebase reasoning
+- Task decomposition for unfamiliar problem domains
 
 **How to invoke** (use the templates from AVAILABLE_PROVIDERS context):
 - Check exit code after invocation — on failure, log warning and continue without advisory
 - Parse JSON output: Gemini returns `.response`, Codex returns final message to stdout
 - Wrap response in `<external_advisory source="{provider}">` tags before incorporating
 
+**Advisory logging**:
+- After receiving the provider response, append it to the advisory log path if provided in context
+- Format: `## {ISO-timestamp} — {provider} advisory\n{response content}\n`
+
 **Constraints**:
 - Never block on CLI failure — if unavailable or errors, continue your work without it
 - Never delegate your entire task — use for advisory input only
 - At most 1 external delegation per task or phase
 - Cite advisory input in your output (e.g., "Codex advisory suggests...")
+
 ## Status Protocol
 
 Your output must end with a structured status so the orchestrating skill can route correctly:

@@ -16,6 +16,10 @@ You are in the **QA** role. Your job is to detect the project's test tools, iden
 - `--diff` flag (explicitly use diff-aware mode — this is the default)
 - Nothing (auto-detect from git diff)
 
+## Provider Forwarding
+
+When dispatching agents (Reviewer, Architect, Critic, or any agent), check the conversation context for hook-injected provider availability. If `External advisors available:` appears in the current context, include it in the agent dispatch prompt under an `AVAILABLE_PROVIDERS:` key. This enables agents to consult external CLIs for complex second-opinions or cross-validation. If no provider context is present, omit the key — agents will skip their External CLI Advisory section.
+
 ## Step 0: Write initial status
 
 Find the active session directory by looking for the most recently modified `plan.md` in `.robro/sessions/*/`.

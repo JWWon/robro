@@ -13,12 +13,9 @@
 #   find_latest_session   — find most recent session file, optionally filtered
 #   spec_counts           — count spec.yaml items (total passed superseded)
 #   has_artifact          — check if any session has a specific file
-#   robro_providers       — enumerate enabled+installed external CLI providers
 
-PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-export PROJECT_ROOT
-SESSIONS_DIR="${PROJECT_ROOT}/.robro/sessions"
-CONFIG_FILE="${PROJECT_ROOT}/.robro/config.json"
+SESSIONS_DIR=".robro/sessions"
+CONFIG_FILE=".robro/config.json"
 
 # Read a value from .robro/config.json with a default fallback.
 # Usage: robro_config <jq_path> <default_value>
@@ -83,89 +80,6 @@ find_latest_session() {
   [ -n "$result" ] && echo "$result"
 }
 
-# Find the most recent per-workflow status file for a given skill name.
-# Per-workflow files are named "status-{skill}.yaml" at session root.
-# Usage: find_workflow_status "do"
-#        find_workflow_status "review"
-find_workflow_status() {
-  local skill="$1"
-  find_latest_session "status-${skill}.yaml"
-}
-
-# Detect the project test command by inspecting common config files.
-# Checks package.json scripts, Makefile, justfile, and language-specific files.
-# Outputs lines of "key:value" pairs, e.g. "npm:npm test" and "framework:jest"
-# Returns exit code 1 if no test command is found.
-detect_test_tools() {
-  local project_root
-  project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-
-  # 1. Check package.json (highest priority — most projects use it)
-  local pkg_json="${project_root}/package.json"
-  if [ -f "$pkg_json" ]; then
-    local test_script
-    test_script=$(jq -r '.scripts.test // empty' "$pkg_json" 2>/dev/null)
-    if [ -n "$test_script" ]; then
-      # Detect package manager
-      local pm="npm"
-      [ -f "${project_root}/bun.lockb" ] || [ -f "${project_root}/bun.lock" ] && pm="bun"
-      [ -f "${project_root}/pnpm-lock.yaml" ] && pm="pnpm"
-      [ -f "${project_root}/yarn.lock" ] && pm="yarn"
-      echo "${pm}:${pm} test"
-
-      # Detect test framework for reporting
-      if echo "$test_script" | grep -qiE "jest|vitest|mocha|jasmine"; then
-        local framework
-        framework=$(echo "$test_script" | grep -oiE "jest|vitest|mocha|jasmine" | head -1 | tr '[:upper:]' '[:lower:]')
-        echo "framework:${framework}"
-      fi
-      return 0
-    fi
-  fi
-
-  # 2. Check Makefile for a "test" target
-  if [ -f "${project_root}/Makefile" ]; then
-    if grep -q "^test:" "${project_root}/Makefile" 2>/dev/null; then
-      echo "make:make test"
-      return 0
-    fi
-  fi
-
-  # 3. Check justfile for a "test" recipe
-  if [ -f "${project_root}/justfile" ]; then
-    if grep -q "^test:" "${project_root}/justfile" 2>/dev/null; then
-      echo "just:just test"
-      return 0
-    fi
-  fi
-
-  # 4. Check for Python test runners
-  if [ -f "${project_root}/pytest.ini" ] || [ -f "${project_root}/pyproject.toml" ]; then
-    if command -v pytest > /dev/null 2>&1; then
-      echo "pytest:pytest"
-      echo "framework:pytest"
-      return 0
-    fi
-  fi
-
-  # 5. Check for Go tests
-  if [ -f "${project_root}/go.mod" ]; then
-    echo "go:go test ./..."
-    echo "framework:go-test"
-    return 0
-  fi
-
-  # 6. Check for Rust tests
-  if [ -f "${project_root}/Cargo.toml" ]; then
-    echo "cargo:cargo test"
-    echo "framework:cargo-test"
-    return 0
-  fi
-
-  # No test command found
-  return 1
-}
-
 # Count spec.yaml items. Echoes "total passed superseded".
 # Usage: read total passed superseded <<< "$(spec_counts "$spec_file")"
 spec_counts() {
@@ -186,56 +100,30 @@ has_artifact() {
   return 1
 }
 
-# Enumerate enabled external CLI providers whose binaries are on PATH.
-# Reads from .robro/config.json first, falls back to plugin config.json.
-# Outputs one line per available provider: "name:model:timeout_ms"
+# Enumerate available and configured external CLI providers.
+# Checks .robro/config.json first (project override), then ${CLAUDE_PLUGIN_ROOT}/config.json.
+# Outputs one line per available provider: name:model:timeout_ms
+# Only outputs providers whose CLI binary is present on PATH.
 # Usage: while IFS=: read -r name model timeout_ms; do ...; done < <(robro_providers)
 robro_providers() {
-  local config_sources=("$CONFIG_FILE")
-  [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/config.json" ] && \
-    config_sources+=("${CLAUDE_PLUGIN_ROOT}/config.json")
+  local cfg=""
+  if [ -f "$CONFIG_FILE" ] && jq -e '.providers' "$CONFIG_FILE" >/dev/null 2>&1; then
+    cfg="$CONFIG_FILE"
+  elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/config.json" ]; then
+    cfg="${CLAUDE_PLUGIN_ROOT}/config.json"
+  fi
+  [ -z "$cfg" ] && return 0
 
-  local providers_json=""
-  for src in "${config_sources[@]}"; do
-    [ -f "$src" ] || continue
-    providers_json=$(jq -r '.providers // empty' "$src" 2>/dev/null)
-    [ -n "$providers_json" ] && break
-  done
+  local names
+  names=$(jq -r '.providers | keys[]' "$cfg" 2>/dev/null) || return 0
 
-  [ -z "$providers_json" ] && return 0
-
-  echo "$providers_json" | jq -r '
-    to_entries[]
-    | select(.value.enabled == true)
-    | "\(.key):\(.value.binary // .key):\(.value.model // ""):\(.value.timeout_ms // 300000)"
-  ' 2>/dev/null | while IFS=: read -r name binary model timeout_ms; do
-    command -v "$binary" > /dev/null 2>&1 && echo "${name}:${model}:${timeout_ms}"
-  done
-}
-
-# Atomic file write: write stdin to temp file, then rename.
-# Usage: echo "content" | atomic_write "/path/to/file"
-atomic_write() {
-  local target="$1"
-  local tmp="${target}.tmp.$$"
-  cat > "$tmp"
-  mv -f "$tmp" "$target"
-}
-
-# Extract last N sprint sections from build-progress.md for injection.
-# Full file is preserved on disk — only the output is truncated.
-# Usage: truncate_build_progress "/path/to/build-progress.md" 5
-truncate_build_progress() {
-  local file="$1"
-  local max_sprints="${2:-5}"
-  [ -f "$file" ] || return
-  awk -v max="$max_sprints" '
-    /^## Sprint/ { sections[++count] = "" }
-    count > 0 { sections[count] = sections[count] $0 "\n" }
-    END {
-      start = count - max + 1
-      if (start < 1) start = 1
-      for (i = start; i <= count; i++) printf "%s", sections[i]
-    }
-  ' "$file"
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    command -v "$name" >/dev/null 2>&1 || continue
+    local model timeout_ms
+    model=$(jq -r ".providers[\"${name}\"].model // \"\"" "$cfg" 2>/dev/null)
+    timeout_ms=$(jq -r ".providers[\"${name}\"].timeout_ms // 300000" "$cfg" 2>/dev/null)
+    [ -z "$model" ] && continue
+    printf '%s:%s:%s\n' "$name" "$model" "$timeout_ms"
+  done <<< "$names"
 }

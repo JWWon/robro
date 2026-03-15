@@ -1,5 +1,17 @@
 {
   "$schema": "./config.schema.json",
+  "providers": {
+    "codex": {
+      "model": "gpt-5.4",
+      "timeout_ms": 300000,
+      "strengths": ["code-review", "code-analysis", "security-audit", "critical-thinking", "verification", "reasoning"]
+    },
+    "gemini": {
+      "model": "gemini-3.1-pro",
+      "timeout_ms": 300000,
+      "strengths": ["multimodal", "large-context", "ui-analysis"]
+    }
+  },
   "model_tiers": {
     "light": {
       "default": "haiku",

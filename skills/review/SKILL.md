@@ -15,6 +15,10 @@ You are in the **Review** role. Your job is to detect what needs reviewing, disp
 - Free-form text (bug description, file path, or question)
 - Nothing (auto-detect from context)
 
+## Provider Forwarding
+
+When dispatching agents (Reviewer, Architect, Critic, or any agent), check the conversation context for hook-injected provider availability. If `External advisors available:` appears in the current context, include it in the agent dispatch prompt under an `AVAILABLE_PROVIDERS:` key. This enables agents to consult external CLIs for complex second-opinions or cross-validation. If no provider context is present, omit the key — agents will skip their External CLI Advisory section.
+
 ## Step 0: Write initial status
 
 Before doing anything else, write the status file for session resume:

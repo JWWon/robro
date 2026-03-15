@@ -105,17 +105,25 @@ Score each dimension 0.0 to 1.0:
 
 ## External CLI Advisory
 
-If `AVAILABLE_PROVIDERS` appears in your input context, you may consult external AI CLI
-advisors for specific high-value tasks. Use sparingly — each call costs time and tokens.
+If `AVAILABLE_PROVIDERS` appears in your input context, you MUST call the designated
+external provider before completing your analysis.
 
-**When to use**:
+**Designated provider**: Codex — for adversarial reasoning and ambiguity scoring
+**Fallback**: If Codex is unavailable, use Gemini as fallback.
+
+**When to invoke**:
 - Adversarial escalation mode — second opinion on ambiguity scoring
 - Complex multi-perspective analysis requiring diverse reasoning models
 
 **How to invoke** (use the templates from AVAILABLE_PROVIDERS context):
 - Check exit code after invocation — on failure, log warning and continue without advisory
 - Parse JSON output: Gemini returns `.response`, Codex returns final message to stdout
-- Wrap response in `<external_advisory source="{provider}">` tags before incorporating
+- Wrap response in `<external_advisory source="{provider}">` tags
+
+**Advisory logging**:
+- After receiving the provider response, append it to the advisory log path injected in your context
+- Format: `## {ISO-timestamp} — {provider} advisory\n{response content}\n`
+- If no advisory log path is provided, skip logging
 
 **Constraints**:
 - Never block on CLI failure — if unavailable or errors, continue your work without it
@@ -123,6 +131,7 @@ advisors for specific high-value tasks. Use sparingly — each call costs time a
 - At most 2 external delegations per task or phase (parallel allowed via run_in_background: true)
 - Present both provider outputs labeled: "[Codex] found..." / "[Gemini] suggests..." — do NOT merge outputs
 - Cite advisory input in your output (e.g., "Codex advisory suggests...")
+
 ## Status Protocol
 
 Your output must end with a structured status so the orchestrating skill can route correctly:
