@@ -31,6 +31,9 @@ These plugins shaped robro's architecture. Consult them when designing new skill
 
 ```
 /robro:idea (PM) ──→ idea.md ──→ /robro:plan (EM) ──→ plan.md + spec.yaml ──→ /robro:do (Builder) ──→ working code
+                                                                                    ↕
+                                                               /robro:review (Reviewer) ──→ findings + spec flip suggestions
+                                                               /robro:qa (QA) ──→ pass/fail test report
 ```
 
 The planning phase is the foundation. No code gets written until idea.md has ambiguity ≤ 0.1, plan.md passes automated review, and spec.yaml cross-validates against both.
@@ -122,6 +125,8 @@ robro/
 - **`/robro:plan`** — Engineering Manager role. Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness.
 - **`/robro:do`** — Builder role. Autonomously implements plan.md through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Uses stop hook auto-continue for multi-session chaining. Produces working code with all spec.yaml items flipped to `passes: true`.
 - **`/robro:tune`** — Configuration auditor. Analyzes project's `.claude/` setup against codebase patterns and git history to identify gaps, stale items, and improvements. Shares the same analysis framework as the do cycle's retro phase.
+- **`/robro:review`** — Reviewer role. Flexible review skill that auto-detects what to review (plan, code, or bug) from context and arguments. Dispatches appropriate agents (Reviewer for code, Architect for bugs/plan, Critic for gaps). Suggests spec flips with user confirmation — never auto-flips. Uses `status-review.yaml` for session resume.
+- **`/robro:qa`** — QA role. Runtime verification skill. Detects test tools from `package.json`, `Makefile`, `justfile`, or language-specific files. Applies diff-aware heuristics to select relevant tests. Presents a structured pass/fail report. Never modifies source files. Uses `status-qa.yaml` for session resume.
 
 ### Plan Artifacts
 

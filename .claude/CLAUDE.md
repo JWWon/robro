@@ -65,6 +65,9 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 
 ```
 /robro:idea (PM) → idea.md → /robro:plan (EM) → plan.md + spec.yaml → /robro:do (Builder) → working code
+                                                                            ↕
+                                                       /robro:review (Reviewer) ──→ findings + spec flip suggestions
+                                                       /robro:qa (QA) ──→ pass/fail test report
 ```
 
 ### Available Skills
@@ -76,6 +79,8 @@ Robro extends Claude Code with a structured planning and execution pipeline.
 | `/robro:do` | Builder | Autonomously implements plan.md through evolutionary sprint cycles. Dispatches builder agents, runs peer review, evolves project knowledge. |
 | `/robro:setup` | Setup | Configures project for robro: CLAUDE.md section, MCP/skill recommendations, .gitignore rules. |
 | `/robro:tune` | Configuration | Audits and optimizes project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs). Codebase + git history analysis. |
+| `/robro:review` | Reviewer | Flexible review that auto-detects mode (plan/code/bug). Dispatches agents, presents findings, suggests spec flips with user confirmation. |
+| `/robro:qa` | QA | Runtime verification. Detects test tools, applies diff-aware heuristics, runs tests, presents pass/fail report. Never auto-fixes. |
 
 ### Plan Artifacts
 
