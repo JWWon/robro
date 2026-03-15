@@ -92,6 +92,8 @@ Each plan cycle runs in a git worktree for branch isolation, producing exactly o
 | `/robro:idea` | Product Manager | Socratic interview that transforms vague thoughts into structured product requirements (`idea.md`). Uses ambiguity scoring to gate progression. |
 | `/robro:plan` | Engineering Manager | Converts `idea.md` into a technical implementation plan (`plan.md`) and validation checklist (`spec.yaml`). Multi-agent review loop ensures technical soundness. |
 | `/robro:do` | Builder | Autonomously implements `plan.md` through evolutionary sprint cycles (Brief, Heads-down, Review, Retro, Level-up). Produces working code with all spec items verified. |
+| `/robro:review` | Reviewer | Flexible review skill. Auto-detects what to review (plan, code, or bug) from context. Dispatches Reviewer, Architect, and Critic agents. Presents structured findings and suggests spec flips with user confirmation. |
+| `/robro:qa` | QA | Runtime verification skill. Detects project test tools, applies diff-aware file heuristics to select relevant tests, runs them, and presents a structured pass/fail report. Never auto-fixes. |
 | `/robro:setup` | Configuration | Configures your project for robro: sets up CLAUDE.md sections, MCP/skill checklist, and `.gitignore` entries. |
 | `/robro:tune` | Configuration | Audits and optimizes project Claude Code configuration (agents, skills, rules, CLAUDE.md, MCPs) using codebase and git history analysis. |
 
@@ -106,9 +108,11 @@ Robro follows a core design principle: **skills orchestrate, agents execute**. S
 ```
 Skills (user-facing)          Agents (workers)
 --------------------          ----------------
-/robro:idea  ───────────────> Researcher, Critic, Contrarian, Simplifier, Ontologist
-/robro:plan  ───────────────> Researcher, Architect, Critic, Planner
-/robro:do    ───────────────> Builder, Reviewer, Retro Analyst, Conflict Resolver
+/robro:idea    ─────────────> Researcher, Critic, Contrarian, Simplifier, Ontologist
+/robro:plan    ─────────────> Researcher, Architect, Critic, Planner
+/robro:do      ─────────────> Builder, Reviewer, Retro Analyst, Conflict Resolver
+/robro:review  ─────────────> Reviewer, Architect, Critic (mode-dependent)
+/robro:qa      ─────────────> (direct execution — no subagent dispatch)
 ```
 
 ### Agents
@@ -197,6 +201,7 @@ Robro's architecture was shaped by these excellent Claude Code plugins:
 - **[oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode)** -- External state file pattern, CLAUDE.md management, and inline challenge lenses. The approach of hooks reading on-disk state to inject focused guidance that survives context compression came directly from this project.
 - **[ouroboros](https://github.com/Q00/ouroboros)** -- Iterative review loops with strong hook guardrails. The "plan, review, revise, re-review until quality passes" pattern and the principle that hooks must keep the agent on track across long sessions were both inspired by ouroboros.
 - **[superpowers](https://github.com/obra/superpowers)** -- Structured agent status protocol (`DONE | NEEDS_CONTEXT | BLOCKED`) and clean separation of skill orchestration vs agent execution. The skill-as-orchestrator pattern at robro's core follows this model.
+- **[gstack](https://github.com/garrytan/gstack)** -- Cognitive mode switching philosophy (different "brains" for different tasks -- founder, engineer, reviewer, QA) and diff-aware QA workflow. gstack's approach of explicit cognitive gears for planning vs reviewing vs shipping influenced robro's role-based skill separation.
 
 ---
 

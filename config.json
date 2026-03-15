@@ -45,6 +45,7 @@
     }
   },
   "providers": {
+    "parallel_timeout_ms": 60000,
     "codex": {
       "enabled": false,
       "binary": "codex",

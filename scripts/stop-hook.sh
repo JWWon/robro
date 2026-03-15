@@ -19,7 +19,7 @@ source "${SCRIPT_DIR}/lib/load-config.sh"
 SPRINT_HARD_CAP=$(robro_config '.thresholds.sprint_hard_cap' '30')
 
 # Find active build status.yaml (at plan root, not discussion/)
-status_file=$(find_latest_session "status.yaml" "skill" "do")
+status_file=$(find_workflow_status "do")
 
 # No active build — allow stop
 [ -z "$status_file" ] && exit 0

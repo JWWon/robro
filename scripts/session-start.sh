@@ -5,16 +5,62 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib/load-config.sh"
 
-context="Robro plugin active. Skills: /robro:idea (PM) | /robro:plan (EM) | /robro:do (Builder)"
+# Migrate legacy status.yaml to per-workflow files.
+# Reads the legacy file, determines skill, writes to status-{skill}.yaml, then removes legacy.
+migrate_legacy_status() {
+  local session_dir="$1"
+  local legacy="${session_dir}/status.yaml"
+  [ -f "$legacy" ] || return 0
 
-# Find the most recently modified status.yaml (always at plan root)
-status_file=$(find_latest_session "status.yaml")
+  local skill
+  skill=$(status_field "$legacy" "skill")
+  [ -z "$skill" ] || [ "$skill" = "none" ] && { rm -f "$legacy"; return 0; }
+
+  local target="${session_dir}/status-${skill}.yaml"
+  # Only migrate if target doesn't already exist (avoid overwriting newer file)
+  if [ ! -f "$target" ]; then
+    cp "$legacy" "$target"
+  fi
+  # Remove the legacy file so hooks don't pick it up again
+  rm -f "$legacy"
+}
+
+# Run migration on all sessions that still have a legacy status.yaml
+if [ -d "$SESSIONS_DIR" ]; then
+  for dir in "$SESSIONS_DIR"/*/; do
+    [ -d "$dir" ] || continue
+    migrate_legacy_status "$dir"
+  done
+fi
+
+context="Robro plugin active. Skills: /robro:idea (PM) | /robro:plan (EM) | /robro:do (Builder) | /robro:review (Review) | /robro:qa (QA)"
+
+# Find the most recently modified per-workflow status file across all skills
+status_file=""
+skill=""
+for wf in do review qa plan idea; do
+  candidate=$(find_workflow_status "$wf")
+  if [ -n "$candidate" ]; then
+    candidate_skill=$(status_field "$candidate" "skill")
+    [ -z "$candidate_skill" ] || [ "$candidate_skill" = "none" ] && continue
+    # Use most recently modified
+    if [ -z "$status_file" ]; then
+      status_file="$candidate"
+      skill="$candidate_skill"
+    else
+      # Compare mtime; replace if candidate is newer
+      if [ "$(get_mtime "$candidate")" -gt "$(get_mtime "$status_file")" ]; then
+        status_file="$candidate"
+        skill="$candidate_skill"
+      fi
+    fi
+  fi
+done
 
 # If there's an active pipeline status, inject focused resume guidance
 if [ -n "$status_file" ]; then
   plan_dir=$(dirname "$status_file")
   plan_name=$(basename "$plan_dir")
-  skill=$(status_field "$status_file" "skill")
   step=$(status_field "$status_file" "step")
   detail=$(status_field "$status_file" "detail")
   next_action=$(status_field "$status_file" "next")
@@ -53,8 +99,18 @@ Last logged: ${last_learning}"
 
       context="${context}
 Sprint ${sprint}, phase ${phase}.
-Read ${plan_dir}/status.yaml and ${plan_dir}/discussion/build-progress.md to restore build state.
+Read ${plan_dir}/status-do.yaml and ${plan_dir}/discussion/build-progress.md to restore build state.
 Use /robro:do to continue execution."
+    elif [ "$skill" = "review" ]; then
+      mode=$(status_field "$status_file" "mode")
+      context="${context}
+Review mode: ${mode:-auto-detect}.
+Read ${plan_dir}/status-review.yaml to restore review state.
+Use /robro:review to continue."
+    elif [ "$skill" = "qa" ]; then
+      context="${context}
+Read ${plan_dir}/status-qa.yaml to restore QA state.
+Use /robro:qa to continue."
     fi
 
     [ -n "$next_action" ] && context="${context}
@@ -70,10 +126,20 @@ if [ -z "$status_file" ] || [ -z "$skill" ] || [ "$skill" = "none" ]; then
       [ -d "$wt_dir" ] || continue
       for wt_plan_dir in "${wt_dir}.robro/sessions"/*/; do
         [ -d "$wt_plan_dir" ] || continue
-        candidate="${wt_plan_dir}status.yaml"
-        [ -f "$candidate" ] || continue
-        wt_skill=$(status_field "$candidate" "skill")
-        [ -z "$wt_skill" ] || [ "$wt_skill" = "none" ] && continue
+        # Also migrate legacy files in worktrees
+        migrate_legacy_status "$wt_plan_dir"
+        candidate=""
+        wt_skill=""
+        for wf in do review qa plan idea; do
+          c="${wt_plan_dir}status-${wf}.yaml"
+          [ -f "$c" ] || continue
+          cs=$(status_field "$c" "skill")
+          [ -z "$cs" ] || [ "$cs" = "none" ] && continue
+          candidate="$c"
+          wt_skill="$cs"
+          break
+        done
+        [ -z "$candidate" ] && continue
         wt_name=$(basename "$wt_dir")
         wt_step=$(status_field "$candidate" "step")
         wt_detail=$(status_field "$candidate" "detail")
@@ -96,7 +162,7 @@ Skill: /robro:${wt_skill}, step ${wt_step} (${wt_detail})
 To resume: Run EnterWorktree(name: \"${wt_name}\") to continue building."
           fi
         else
-          # Non-build skills (idea, plan) — generic resume message
+          # Non-build skills (idea, plan, review, qa) — generic resume message
           context="${context}
 
 WORKTREE RESUME: Plan '$(basename "$wt_plan_dir")' is active in worktree '${wt_name}'.

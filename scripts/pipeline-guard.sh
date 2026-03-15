@@ -15,8 +15,21 @@ echo "$PROMPT_LOWER" | grep -q "^/robro:" && exit 0
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib/load-config.sh"
 
-# Find the most recently modified status.yaml (always at plan root)
-status_file=$(find_latest_session "status.yaml")
+# Find the most recently modified per-workflow status file
+status_file=""
+skill=""
+for wf in do review qa plan idea; do
+  candidate=$(find_workflow_status "$wf")
+  if [ -n "$candidate" ]; then
+    cs=$(status_field "$candidate" "skill")
+    [ -z "$cs" ] || [ "$cs" = "none" ] && continue
+    if [ -z "$status_file" ]; then
+      status_file="$candidate"
+    else
+      [ "$(get_mtime "$candidate")" -gt "$(get_mtime "$status_file")" ] && status_file="$candidate"
+    fi
+  fi
+done
 
 # No active pipeline — exit silently
 [ -z "$status_file" ] && exit 0
@@ -83,7 +96,33 @@ case "$skill" in
       converge)
         echo "Action: Run 5-gate convergence check + pathology detection. If converged, finalize. If not, persist state for next sprint." ;;
       *)
-        echo "Action: Continue build execution. Read status.yaml for current phase and next action." ;;
+        echo "Action: Continue build execution. Read status-do.yaml for current phase and next action." ;;
+    esac
+    ;;
+  review)
+    case "$step" in
+      0|1)
+        echo "Action: Detect review mode from arguments and context. Write status-review.yaml." ;;
+      3|4)
+        echo "Action: Wait for agent results. Route on Status field, then collect findings." ;;
+      5|6)
+        echo "Action: Present report to user. If spec flip suggestions exist, confirm via AskUserQuestion." ;;
+      *)
+        echo "Action: Continue /robro:review execution. Check status-review.yaml for current mode and next action." ;;
+    esac
+    ;;
+  qa)
+    case "$step" in
+      0|1)
+        echo "Action: Detect test tools from project config. Write status-qa.yaml." ;;
+      2)
+        echo "Action: Apply diff-aware file heuristics to select relevant tests." ;;
+      3)
+        echo "Action: Run selected tests and capture output." ;;
+      4|5)
+        echo "Action: Generate pass/fail report and finalize." ;;
+      *)
+        echo "Action: Continue /robro:qa execution. Check status-qa.yaml for current state." ;;
     esac
     ;;
 esac

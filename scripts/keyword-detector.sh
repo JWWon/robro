@@ -51,6 +51,14 @@ case "$PROMPT_LOWER" in
     echo "Suggestion: Use /robro:tune to audit and optimize your project's Claude Code configuration."
     exit 0
     ;;
+  *"robro review"*|*"robro:review"*)
+    echo "Suggestion: Use /robro:review to run a structured review (plan, code, or bug mode)."
+    exit 0
+    ;;
+  *"robro qa"*|*"robro:qa"*)
+    echo "Suggestion: Use /robro:qa to run automated tests and generate a pass/fail report."
+    exit 0
+    ;;
 esac
 
 # Tier 2: Natural language triggers for /robro:idea (single regex instead of 18 subprocesses)
@@ -78,6 +86,18 @@ fi
 # Tier 2.7: Natural language triggers for /robro:tune (single regex instead of 8 subprocesses)
 if echo "$PROMPT_LOWER" | grep -qE "audit config|review config|optimize setup|tune setup|check my setup|improve config|configuration audit|check configuration"; then
   echo "Consider using /robro:tune to audit your project's Claude Code configuration for gaps and improvements."
+  exit 0
+fi
+
+# Tier 2.8: Natural language triggers for /robro:review
+if echo "$PROMPT_LOWER" | grep -qE "review my|review the|check my|check the plan|code review|review this|audit my|look for bugs|find issues|review for bugs"; then
+  echo "Consider using /robro:review to run a structured review of your plan, code, or a specific bug."
+  exit 0
+fi
+
+# Tier 2.9: Natural language triggers for /robro:qa
+if echo "$PROMPT_LOWER" | grep -qE "run tests|run the tests|check tests|test coverage|verify tests|qa check|does it pass|all tests pass|run qa"; then
+  echo "Consider using /robro:qa to run automated tests and generate a structured pass/fail report."
   exit 0
 fi
 

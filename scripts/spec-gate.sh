@@ -34,7 +34,7 @@ if ! has_artifact "spec.yaml"; then
   fi
 else
   # During active build, validate that file edits are within scope of current task
-  status_file=$(find_latest_session "status.yaml" "skill" "do")
+  status_file=$(find_workflow_status "do")
   if [ -n "$status_file" ]; then
     phase=$(status_field "$status_file" "phase")
     if [ "$phase" = "heads-down" ]; then

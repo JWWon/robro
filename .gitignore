@@ -13,7 +13,7 @@ Thumbs.db
 # Robro session artifacts (temporal)
 .robro/sessions/*/research/
 .robro/sessions/*/discussion/
-.robro/sessions/*/status.yaml
+.robro/sessions/*/status*.yaml
 .robro/sessions/*/*.bak.*
 
 # Worktree directories

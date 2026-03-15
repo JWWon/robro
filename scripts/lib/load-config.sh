@@ -83,6 +83,89 @@ find_latest_session() {
   [ -n "$result" ] && echo "$result"
 }
 
+# Find the most recent per-workflow status file for a given skill name.
+# Per-workflow files are named "status-{skill}.yaml" at session root.
+# Usage: find_workflow_status "do"
+#        find_workflow_status "review"
+find_workflow_status() {
+  local skill="$1"
+  find_latest_session "status-${skill}.yaml"
+}
+
+# Detect the project test command by inspecting common config files.
+# Checks package.json scripts, Makefile, justfile, and language-specific files.
+# Outputs lines of "key:value" pairs, e.g. "npm:npm test" and "framework:jest"
+# Returns exit code 1 if no test command is found.
+detect_test_tools() {
+  local project_root
+  project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+  # 1. Check package.json (highest priority — most projects use it)
+  local pkg_json="${project_root}/package.json"
+  if [ -f "$pkg_json" ]; then
+    local test_script
+    test_script=$(jq -r '.scripts.test // empty' "$pkg_json" 2>/dev/null)
+    if [ -n "$test_script" ]; then
+      # Detect package manager
+      local pm="npm"
+      [ -f "${project_root}/bun.lockb" ] || [ -f "${project_root}/bun.lock" ] && pm="bun"
+      [ -f "${project_root}/pnpm-lock.yaml" ] && pm="pnpm"
+      [ -f "${project_root}/yarn.lock" ] && pm="yarn"
+      echo "${pm}:${pm} test"
+
+      # Detect test framework for reporting
+      if echo "$test_script" | grep -qiE "jest|vitest|mocha|jasmine"; then
+        local framework
+        framework=$(echo "$test_script" | grep -oiE "jest|vitest|mocha|jasmine" | head -1 | tr '[:upper:]' '[:lower:]')
+        echo "framework:${framework}"
+      fi
+      return 0
+    fi
+  fi
+
+  # 2. Check Makefile for a "test" target
+  if [ -f "${project_root}/Makefile" ]; then
+    if grep -q "^test:" "${project_root}/Makefile" 2>/dev/null; then
+      echo "make:make test"
+      return 0
+    fi
+  fi
+
+  # 3. Check justfile for a "test" recipe
+  if [ -f "${project_root}/justfile" ]; then
+    if grep -q "^test:" "${project_root}/justfile" 2>/dev/null; then
+      echo "just:just test"
+      return 0
+    fi
+  fi
+
+  # 4. Check for Python test runners
+  if [ -f "${project_root}/pytest.ini" ] || [ -f "${project_root}/pyproject.toml" ]; then
+    if command -v pytest > /dev/null 2>&1; then
+      echo "pytest:pytest"
+      echo "framework:pytest"
+      return 0
+    fi
+  fi
+
+  # 5. Check for Go tests
+  if [ -f "${project_root}/go.mod" ]; then
+    echo "go:go test ./..."
+    echo "framework:go-test"
+    return 0
+  fi
+
+  # 6. Check for Rust tests
+  if [ -f "${project_root}/Cargo.toml" ]; then
+    echo "cargo:cargo test"
+    echo "framework:cargo-test"
+    return 0
+  fi
+
+  # No test command found
+  return 1
+}
+
 # Count spec.yaml items. Echoes "total passed superseded".
 # Usage: read total passed superseded <<< "$(spec_counts "$spec_file")"
 spec_counts() {

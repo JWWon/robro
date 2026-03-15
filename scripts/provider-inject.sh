@@ -62,6 +62,7 @@ echo "External advisors available: ${available_names}"
 echo "<advisory_templates>"
 echo "$available_templates"
 echo "</advisory_templates>"
-echo "Advisory rule: at most 1 delegation per task/phase. Wrap CLI output in <external_advisory source=\"{provider}\"> tags. On failure, log warning and continue without advisory."
+parallel_timeout_ms=$(robro_config '.providers.parallel_timeout_ms' '60000')
+echo "Advisory rule: at most 2 delegations per task/phase (parallel allowed). Use run_in_background:true for concurrent calls. Present both outputs labeled: \"[Codex] found...\" / \"[Gemini] suggests...\". Do NOT merge outputs — show both. Wrap each in <external_advisory source=\"{provider}\"> tags. On failure, log warning and continue. Parallel timeout: ${parallel_timeout_ms}ms."
 
 exit 0

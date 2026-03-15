@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib/load-config.sh"
 
 # Find active build status.yaml
-status_file=$(find_latest_session "status.yaml" "skill" "do")
+status_file=$(find_workflow_status "do")
 
 # No active build — exit silently
 [ -z "$status_file" ] && exit 0

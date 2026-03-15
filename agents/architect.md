@@ -59,7 +59,8 @@ advisors for specific high-value tasks. Use sparingly — each call costs time a
 **Constraints**:
 - Never block on CLI failure — if unavailable or errors, continue your work without it
 - Never delegate your entire task — use for advisory input only
-- At most 1 external delegation per task or phase
+- At most 2 external delegations per task or phase (parallel allowed via run_in_background: true)
+- Present both provider outputs labeled: "[Codex] found..." / "[Gemini] suggests..." — do NOT merge outputs
 - Cite advisory input in your output (e.g., "Codex advisory suggests...")
 
 ## Context Budget Priority

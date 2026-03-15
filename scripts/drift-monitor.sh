@@ -57,7 +57,7 @@ if [ -n "$matched_spec" ]; then
   fi
 
   # During active build, show current task context
-  status_candidate="${plan_dir}/status.yaml"
+  status_candidate="${plan_dir}/status-do.yaml"
   if [ -f "$status_candidate" ]; then
     build_skill=$(status_field "$status_candidate" "skill")
     if [ "$build_skill" = "do" ]; then
